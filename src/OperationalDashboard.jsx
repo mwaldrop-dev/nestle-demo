@@ -563,7 +563,8 @@ function RefreshTimer({ lastRefresh, isRefreshing, now }) {
 }
 
 /* ─── Toggle switch ─────────────────────────────────────────────────── */
-function ToggleSwitch({ on, onToggle, label }) {
+function ToggleSwitch({ on, onToggle, label, accentColor }) {
+  const c = accentColor || T.primary;
   return (
     <div
       onClick={onToggle}
@@ -571,9 +572,9 @@ function ToggleSwitch({ on, onToggle, label }) {
     >
       <div style={{
         width: 34, height: 18, borderRadius: 9, position: "relative",
-        background: on ? T.primary : "#2A3347",
+        background: on ? c : "#2A3347",
         transition: "background 0.25s",
-        boxShadow: on ? `0 0 8px ${T.primary}55` : "none",
+        boxShadow: on ? `0 0 8px ${c}55` : "none",
       }}>
         <div style={{
           position: "absolute", top: 2, left: on ? 18 : 2,
@@ -585,7 +586,7 @@ function ToggleSwitch({ on, onToggle, label }) {
       <span style={{
         fontSize: 10, fontWeight: 700, letterSpacing: 1,
         fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase",
-        color: on ? T.primary : T.muted, transition: "color 0.25s",
+        color: on ? c : T.muted, transition: "color 0.25s",
       }}>{label}</span>
     </div>
   );
@@ -708,7 +709,7 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             {/* Accelerated-time toggle (hidden when used inside DemoView) */}
             {!frozen && !overrideData && (
-              <ToggleSwitch on={accelOn} onToggle={handleToggle} label="Accel" />
+              <ToggleSwitch on={accelOn} onToggle={handleToggle} label="GPU Acceleration" accentColor="#76B900" />
             )}
 
             {/* Status pill */}
