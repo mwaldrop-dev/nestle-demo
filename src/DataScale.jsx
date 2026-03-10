@@ -461,6 +461,8 @@ export default function DataScale() {
   const [animating, setAnimating] = useState(true);
   const [svgReady, setSvgReady] = useState(false);
   const svgContainerRef = useRef(null);
+  const [erdZoom, setErdZoom] = useState(0.08);
+  const erdScrollRef = useRef(null);
 
   // Fetch SVG for inline rendering — patch width/height to scale in container
   useEffect(() => {
@@ -597,7 +599,7 @@ export default function DataScale() {
         </div>
       )}
 
-      {/* ④ Full ERD — Mermaid-rendered single image */}
+      {/* ④ Full ERD — Mermaid-rendered single image with zoom */}
       {view === "mega" && (
         <div style={{
           background: T.surface, borderRadius: 8, border: `1px solid ${T.border}`,
@@ -610,13 +612,44 @@ export default function DataScale() {
             <span style={{ fontSize: 14, fontWeight: 700, color: T.text, fontFamily: "'IBM Plex Mono', monospace" }}>
               Full Schema — 100 tables · 226 relationships
             </span>
-            <span style={{ fontSize: 11, color: T.muted }}>Nestlé Supply Chain Operations</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <button onClick={() => setErdZoom(z => Math.max(0.03, z / 1.3))} style={btnStyle(false)} title="Zoom out">
+                <span style={{ fontSize: 15, lineHeight: 1 }}>−</span>
+              </button>
+              <span style={{ fontSize: 11, color: T.sub, fontFamily: "'IBM Plex Mono', monospace", minWidth: 48, textAlign: "center" }}>
+                {Math.round(erdZoom * 100)}%
+              </span>
+              <button onClick={() => setErdZoom(z => Math.min(1, z * 1.3))} style={btnStyle(false)} title="Zoom in">
+                <span style={{ fontSize: 15, lineHeight: 1 }}>+</span>
+              </button>
+              <button onClick={() => setErdZoom(0.08)} style={{ ...btnStyle(false), marginLeft: 4 }} title="Reset zoom">
+                Fit
+              </button>
+              <span style={{ fontSize: 11, color: T.muted, marginLeft: 8 }}>Ctrl+scroll to zoom</span>
+            </div>
           </div>
-          <div style={{ padding: 16, overflow: "auto", maxHeight: "75vh" }}>
+          <div
+            ref={erdScrollRef}
+            onWheel={e => {
+              if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                setErdZoom(z => {
+                  const next = e.deltaY < 0 ? z * 1.12 : z / 1.12;
+                  return Math.min(1, Math.max(0.03, next));
+                });
+              }
+            }}
+            style={{ padding: 16, overflow: "auto", maxHeight: "80vh", cursor: "grab" }}
+          >
             <img
               src="/erd_overview_mermaid.svg"
               alt="Full ERD — 100 tables"
-              style={{ width: 14853, height: 4519, maxWidth: "none" }}
+              style={{
+                width: Math.round(14853 * erdZoom),
+                height: Math.round(4519 * erdZoom),
+                maxWidth: "none",
+                transition: "width 0.15s ease, height 0.15s ease",
+              }}
             />
           </div>
         </div>
