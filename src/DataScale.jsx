@@ -202,28 +202,30 @@ function ExportButtons({ targetRef, filename }) {
     setBusy("png");
     try {
       // Check if the target contains an <img> with an SVG src (Full ERD view).
-      // html2canvas taints the canvas when rendering external SVG images,
-      // so we use a direct fetch → blob URL → canvas pipeline instead.
+      // SVGs with <foreignObject> taint the canvas via drawImage, so we inline
+      // the SVG into a hidden DOM node and use html2canvas on that instead.
       const svgImg = targetRef.current.querySelector('img[src$=".svg"]');
       if (svgImg) {
         const resp = await fetch(svgImg.src);
         const svgText = await resp.text();
-        const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
-        const blobUrl = URL.createObjectURL(svgBlob);
-        const img = new Image();
-        img.onload = () => {
-          // Render at 2× the displayed size for crisp output
+        const container = document.createElement("div");
+        container.style.cssText = "position:fixed;left:-99999px;top:0;background:#0E1117;";
+        container.innerHTML = svgText;
+        const svgEl = container.querySelector("svg");
+        if (svgEl) {
           const scale = 2;
           const w = svgImg.clientWidth * scale;
           const h = svgImg.clientHeight * scale;
-          const canvas = document.createElement("canvas");
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext("2d");
-          ctx.fillStyle = "#0E1117";
-          ctx.fillRect(0, 0, w, h);
-          ctx.drawImage(img, 0, 0, w, h);
-          URL.revokeObjectURL(blobUrl);
+          svgEl.setAttribute("width", String(w));
+          svgEl.setAttribute("height", String(h));
+        }
+        document.body.appendChild(container);
+        try {
+          const canvas = await html2canvas(container, {
+            backgroundColor: "#0E1117",
+            scale: 1,
+            logging: false,
+          });
           canvas.toBlob(blob => {
             if (!blob) return;
             const url = URL.createObjectURL(blob);
@@ -234,11 +236,11 @@ function ExportButtons({ targetRef, filename }) {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            setBusy(null);
           }, "image/png");
-        };
-        img.onerror = () => { URL.revokeObjectURL(blobUrl); setBusy(null); };
-        img.src = blobUrl;
+        } finally {
+          document.body.removeChild(container);
+          setBusy(null);
+        }
         return;
       }
 
