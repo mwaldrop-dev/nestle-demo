@@ -189,7 +189,8 @@ export default function DataScale() {
     { id: "close",   label: "① Close-up (5 rows)" },
     { id: "medium",  label: "② 200 rows" },
     { id: "table",   label: "③ Single ERD table" },
-    { id: "full",    label: "④ Full ERD (100 tables)" },
+    { id: "mega",    label: "④ Full ERD (1 image)" },
+    { id: "full",    label: "⑤ All 10 domains" },
   ];
 
   return (
@@ -266,7 +267,69 @@ export default function DataScale() {
         </div>
       )}
 
-      {/* ④ All 10 domains tiled */}
+      {/* ④ Full ERD crammed into one view — intentionally unreadable */}
+      {view === "mega" && (
+        <div style={{
+          background: T.surface, borderRadius: 8, border: `1px solid ${T.border}`,
+          overflow: "hidden", position: "relative",
+        }}>
+          <div style={{
+            padding: "12px 20px", borderBottom: `1px solid ${T.border}`,
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+          }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: T.text, fontFamily: "'IBM Plex Mono', monospace" }}>
+              Full Schema — 100 tables · 226 relationships
+            </span>
+            <span style={{ fontSize: 11, color: T.muted }}>Nestlé Supply Chain Operations</span>
+          </div>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 0,
+          }}>
+            {[
+              { file: "erd_master_data.svg",   label: "Master Data" },
+              { file: "erd_organization.svg",   label: "Organization" },
+              { file: "erd_supplier_mgmt.svg",  label: "Supplier Mgmt" },
+              { file: "erd_procurement.svg",     label: "Procurement" },
+              { file: "erd_inventory.svg",       label: "Inventory" },
+              { file: "erd_production.svg",      label: "Production" },
+              { file: "erd_quality.svg",         label: "Quality" },
+              { file: "erd_logistics.svg",       label: "Logistics" },
+              { file: "erd_alerts.svg",          label: "Alerts" },
+              { file: "erd_kpis_demand.svg",     label: "KPIs & Demand" },
+            ].map(d => (
+              <div key={d.file} style={{
+                borderRight: `1px solid ${T.border}22`,
+                borderBottom: `1px solid ${T.border}22`,
+                overflow: "hidden", height: 90,
+              }}>
+                <img
+                  src={`/${d.file}`}
+                  alt={d.label}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", opacity: 0.85 }}
+                />
+              </div>
+            ))}
+          </div>
+          {/* Overlay label */}
+          <div style={{
+            position: "absolute", bottom: 0, left: 0, right: 0,
+            padding: "20px 0 14px",
+            background: "linear-gradient(0deg, rgba(14,17,23,0.95) 0%, rgba(14,17,23,0) 100%)",
+            textAlign: "center",
+          }}>
+            <span style={{
+              fontSize: 12, color: T.sub, fontFamily: "'IBM Plex Mono', monospace",
+              letterSpacing: 1,
+            }}>
+              100 tables · 226 foreign keys · 10 operational domains
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ⑤ All 10 domains tiled */}
       {view === "full" && (
         <div>
           <div style={{ marginBottom: 16 }}>
