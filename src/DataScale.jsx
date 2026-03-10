@@ -387,6 +387,7 @@ export default function DataScale() {
         <div style={{
           background: T.surface, borderRadius: 8, border: `1px solid ${T.border}`,
           overflow: "hidden", position: "relative",
+          maxWidth: 1000, /* lock width so it looks dense on any screen */
         }}>
           <div style={{
             padding: "12px 20px", borderBottom: `1px solid ${T.border}`,
@@ -399,7 +400,7 @@ export default function DataScale() {
           </div>
           <div style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
+            gridTemplateColumns: "1fr 1fr 1fr",
             gap: 0,
           }}>
             {[
@@ -417,12 +418,17 @@ export default function DataScale() {
               <div key={d.file} style={{
                 borderRight: `1px solid ${T.border}22`,
                 borderBottom: `1px solid ${T.border}22`,
-                overflow: "hidden", height: 90,
+                overflow: "hidden", height: 110,
               }}>
                 <img
                   src={`/${d.file}`}
                   alt={d.label}
-                  style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", opacity: 0.85 }}
+                  style={{
+                    width: "200%", height: "200%",
+                    objectFit: "contain", objectPosition: "center top",
+                    opacity: 0.85,
+                    transform: "scale(0.55)", transformOrigin: "top left",
+                  }}
                 />
               </div>
             ))}
@@ -430,7 +436,7 @@ export default function DataScale() {
           {/* Overlay label */}
           <div style={{
             position: "absolute", bottom: 0, left: 0, right: 0,
-            padding: "20px 0 14px",
+            padding: "24px 0 14px",
             background: "linear-gradient(0deg, rgba(14,17,23,0.95) 0%, rgba(14,17,23,0) 100%)",
             textAlign: "center",
           }}>
