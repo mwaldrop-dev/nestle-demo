@@ -201,6 +201,48 @@ function ExportButtons({ targetRef, filename }) {
     if (!targetRef.current || busy) return;
     setBusy("png");
     try {
+      // Check if the target contains an <img> with an SVG src (Full ERD view).
+      // html2canvas taints the canvas when rendering external SVG images,
+      // so we use a direct fetch → blob URL → canvas pipeline instead.
+      const svgImg = targetRef.current.querySelector('img[src$=".svg"]');
+      if (svgImg) {
+        const resp = await fetch(svgImg.src);
+        const svgText = await resp.text();
+        const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
+        const blobUrl = URL.createObjectURL(svgBlob);
+        const img = new Image();
+        img.onload = () => {
+          // Render at 2× the displayed size for crisp output
+          const scale = 2;
+          const w = svgImg.clientWidth * scale;
+          const h = svgImg.clientHeight * scale;
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#0E1117";
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          URL.revokeObjectURL(blobUrl);
+          canvas.toBlob(blob => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.download = `${filename}.png`;
+            link.href = url;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            setBusy(null);
+          }, "image/png");
+        };
+        img.onerror = () => { URL.revokeObjectURL(blobUrl); setBusy(null); };
+        img.src = blobUrl;
+        return;
+      }
+
+      // Default path: html2canvas for non-SVG-image views
       const canvas = await html2canvas(targetRef.current, {
         backgroundColor: "#0E1117",
         scale: 2,
