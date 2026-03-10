@@ -182,18 +182,27 @@ function DataTable({ rows, fontSize = 12, rowHeight = 32, showRowNums = false, t
 const ROWS_5   = Array.from({ length: 5 },   (_, i) => fakeOrder(i));
 const ROWS_200 = Array.from({ length: 200 }, (_, i) => fakeOrder(i));
 
-/* ─── Export button ─────────────────────────────────────────────────── */
-function ExportButton({ targetRef, filename }) {
-  const [exporting, setExporting] = useState(false);
+/* ─── Export helpers ────────────────────────────────────────────────── */
+const btnStyle = (busy) => ({
+  padding: "6px 12px", borderRadius: 6, cursor: busy ? "wait" : "pointer",
+  border: `1px solid ${T.border}`,
+  background: T.surface2, color: T.sub,
+  fontWeight: 600, fontSize: 11,
+  fontFamily: "'IBM Plex Mono', monospace",
+  display: "flex", alignItems: "center", gap: 5,
+  opacity: busy ? 0.5 : 1, transition: "opacity 0.2s",
+});
 
-  const handleExport = useCallback(async () => {
-    if (!targetRef.current || exporting) return;
-    setExporting(true);
+function ExportButtons({ targetRef, filename }) {
+  const [busy, setBusy] = useState(null); // null | "png" | "svg"
+
+  const exportPng = useCallback(async () => {
+    if (!targetRef.current || busy) return;
+    setBusy("png");
     try {
-      const el = targetRef.current;
-      const canvas = await html2canvas(el, {
+      const canvas = await html2canvas(targetRef.current, {
         backgroundColor: "#0E1117",
-        scale: 2,                 // 2× for high-res
+        scale: 2,
         useCORS: true,
         logging: false,
       });
@@ -202,29 +211,81 @@ function ExportButton({ targetRef, filename }) {
       link.href = canvas.toDataURL("image/png");
       link.click();
     } catch (err) {
-      console.error("Export failed:", err);
+      console.error("PNG export failed:", err);
     } finally {
-      setExporting(false);
+      setBusy(null);
     }
-  }, [targetRef, filename, exporting]);
+  }, [targetRef, filename, busy]);
+
+  const exportSvg = useCallback(() => {
+    if (!targetRef.current || busy) return;
+    setBusy("svg");
+    try {
+      const el = targetRef.current;
+      const rect = el.getBoundingClientRect();
+      const clone = el.cloneNode(true);
+
+      // Inline all computed styles so SVG renders standalone
+      const inlineStyles = (source, target) => {
+        const computed = window.getComputedStyle(source);
+        for (let i = 0; i < computed.length; i++) {
+          const prop = computed[i];
+          target.style.setProperty(prop, computed.getPropertyValue(prop));
+        }
+        const srcChildren = source.children;
+        const tgtChildren = target.children;
+        for (let i = 0; i < srcChildren.length; i++) {
+          inlineStyles(srcChildren[i], tgtChildren[i]);
+        }
+      };
+      inlineStyles(el, clone);
+
+      const svgNs = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(svgNs, "svg");
+      svg.setAttribute("xmlns", svgNs);
+      svg.setAttribute("width", rect.width);
+      svg.setAttribute("height", rect.height);
+      svg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
+
+      const fo = document.createElementNS(svgNs, "foreignObject");
+      fo.setAttribute("width", "100%");
+      fo.setAttribute("height", "100%");
+      fo.setAttribute("x", "0");
+      fo.setAttribute("y", "0");
+
+      const body = document.createElement("div");
+      body.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
+      body.appendChild(clone);
+      fo.appendChild(body);
+      svg.appendChild(fo);
+
+      const blob = new Blob(
+        ['<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(svg)],
+        { type: "image/svg+xml" }
+      );
+      const link = document.createElement("a");
+      link.download = `${filename}.svg`;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      console.error("SVG export failed:", err);
+    } finally {
+      setBusy(null);
+    }
+  }, [targetRef, filename, busy]);
 
   return (
-    <button
-      onClick={handleExport}
-      disabled={exporting}
-      style={{
-        padding: "6px 14px", borderRadius: 6, cursor: exporting ? "wait" : "pointer",
-        border: `1px solid ${T.border}`,
-        background: T.surface2, color: T.sub,
-        fontWeight: 600, fontSize: 11,
-        fontFamily: "'IBM Plex Mono', monospace",
-        display: "flex", alignItems: "center", gap: 6,
-        opacity: exporting ? 0.5 : 1, transition: "opacity 0.2s",
-      }}
-    >
-      <span style={{ fontSize: 13 }}>⬇</span>
-      {exporting ? "Exporting…" : "Export PNG (2×)"}
-    </button>
+    <div style={{ display: "flex", gap: 6 }}>
+      <button onClick={exportPng} disabled={!!busy} style={btnStyle(busy === "png")}>
+        <span style={{ fontSize: 13 }}>⬇</span>
+        {busy === "png" ? "Exporting…" : "PNG (2×)"}
+      </button>
+      <button onClick={exportSvg} disabled={!!busy} style={btnStyle(busy === "svg")}>
+        <span style={{ fontSize: 13 }}>⬇</span>
+        {busy === "svg" ? "Exporting…" : "SVG"}
+      </button>
+    </div>
   );
 }
 
@@ -263,7 +324,7 @@ export default function DataScale() {
           >{v.label}</button>
         ))}
         <div style={{ marginLeft: "auto" }}>
-          <ExportButton targetRef={captureRef} filename={`nestle-data-scale-${view}`} />
+          <ExportButtons targetRef={captureRef} filename={`nestle-data-scale-${view}`} />
         </div>
       </div>
 
