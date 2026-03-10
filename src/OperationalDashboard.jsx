@@ -47,12 +47,8 @@ function useDataRefresh() {
 
   useEffect(() => {
     const id = setInterval(() => {
-      setIsRefreshing(true);
-      setTimeout(() => {
-        setTick(t => t + 1);
-        setLastRefresh(new Date());
-        setIsRefreshing(false);
-      }, 800); // brief "loading" flash
+      setTick(t => t + 1);
+      setLastRefresh(new Date());
     }, REFRESH_INTERVAL);
     return () => clearInterval(id);
   }, []);
@@ -74,8 +70,8 @@ function AnimVal({ children, tick }) {
   }, [tick]);
   return (
     <span style={{
-      transition: "color 0.3s, opacity 0.3s",
-      opacity: flash ? 0.5 : 1,
+      transition: "color 0.4s",
+      color: flash ? "#3B9EFF" : "inherit",
     }}>{children}</span>
   );
 }
@@ -585,7 +581,7 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
     <div style={{
       display: "flex", minHeight: "100vh",
       fontFamily: "'IBM Plex Sans', 'Segoe UI', sans-serif", background: T.bg,
-      opacity: isRefreshing ? 0.7 : 1, transition: "opacity 0.4s",
+      /* no full-screen flash — individual values animate instead */
     }}>
 
       {/* ── Sidebar ── */}
@@ -804,7 +800,7 @@ function DemoView() {
           <div style={{
             transform: "scale(0.52)", transformOrigin: "top left",
             width: "192%", height: "192%",
-            opacity: isFlashing ? 0.6 : 1, transition: "opacity 0.3s",
+            /* no full-panel flash */
           }}>
             <Dashboard simTime={simTime} overrideData={liveData} overrideTick={simTick} frozen />
           </div>
