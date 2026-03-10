@@ -113,12 +113,12 @@ function makeInventoryDays() {
 
 function makeSuppliers() {
   const base = [
-    { id:"S-01", name:"Olam International",  material:"Cocoa",    region:"Côte d'Ivoire", baseOtd:94, shipments:3 },
-    { id:"S-02", name:"ADM Cocoa",            material:"Cocoa",    region:"Netherlands",   baseOtd:89, shipments:1 },
-    { id:"S-03", name:"Wilmar International", material:"Palm Oil", region:"Singapore",     baseOtd:91, shipments:2 },
-    { id:"S-04", name:"Südzucker AG",         material:"Sugar",    region:"Germany",       baseOtd:98, shipments:4 },
-    { id:"S-05", name:"Fonterra",             material:"Milk Pwd", region:"New Zealand",   baseOtd:72, shipments:2 },
-    { id:"S-06", name:"Olam Agri",            material:"Wheat",    region:"Ukraine",       baseOtd:97, shipments:3 },
+    { id:"S-01", name:"Supplier 01",  material:"Cocoa",    region:"Côte d'Ivoire", baseOtd:94, shipments:3 },
+    { id:"S-02", name:"Supplier 02",  material:"Cocoa",    region:"Netherlands",   baseOtd:89, shipments:1 },
+    { id:"S-03", name:"Supplier 03",  material:"Palm Oil", region:"Singapore",     baseOtd:91, shipments:2 },
+    { id:"S-04", name:"Supplier 04",  material:"Sugar",    region:"Germany",       baseOtd:98, shipments:4 },
+    { id:"S-05", name:"Supplier 05",  material:"Milk Pwd", region:"New Zealand",   baseOtd:72, shipments:2 },
+    { id:"S-06", name:"Supplier 06",  material:"Wheat",    region:"Ukraine",       baseOtd:97, shipments:3 },
   ];
   return base.map(s => {
     const otd = Math.min(100, Math.max(50, s.baseOtd + Math.round((Math.random() - 0.5) * 6)));
@@ -147,10 +147,10 @@ function makeAlerts() {
   const fmt = d => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   return [
     { id:1, time: fmt(now),                       sev:"critical", msg:"Milk Pwd stock below safety threshold — cover remaining", category:"Inventory" },
-    { id:2, time: fmt(new Date(now - 18*60000)), sev:"warning",  msg:"Fonterra OTD dropped — shipments delayed",                category:"Supplier"  },
+    { id:2, time: fmt(new Date(now - 18*60000)), sev:"warning",  msg:"Supplier 05 OTD dropped — shipments delayed",             category:"Supplier"  },
     { id:3, time: fmt(new Date(now - 32*60000)), sev:"warning",  msg:"TRK-447 temp trending toward 4°C ceiling — monitor advised", category:"Cold Chain"},
     { id:4, time: fmt(new Date(now - 89*60000)), sev:"info",     msg:"Palm Oil inventory approaching reorder point",             category:"Inventory" },
-    { id:5, time: fmt(new Date(now - 195*60000)),sev:"info",     msg:"Südzucker AG delivery confirmed — shipments on schedule",  category:"Supplier"  },
+    { id:5, time: fmt(new Date(now - 195*60000)),sev:"info",     msg:"Supplier 04 delivery confirmed — shipments on schedule",   category:"Supplier"  },
   ];
 }
 
@@ -158,25 +158,25 @@ function makeAlerts() {
 const ACTION_MODAL_DATA = {
   Inventory: {
     heading: "Alternate Suppliers — Milk Powder",
-    aiRec: "Activate Lactalis (France) — lowest lead time with adequate stock. Split remaining shortfall to FrieslandCampina for cost efficiency.",
+    aiRec: "Activate Supplier 07 (France) — lowest lead time with adequate stock. Split remaining shortfall to Supplier 08 for cost efficiency.",
     aiConfidence: 94,
     actionLabel: "Activate Supplier",
     suppliers: [
-      { name: "Lactalis",          region: "France",        leadTime: "3 days",  costPremium: "+4%",  availQty: "12 MT", aiScore: 96 },
-      { name: "FrieslandCampina",  region: "Netherlands",   leadTime: "4 days",  costPremium: "+2%",  availQty: "18 MT", aiScore: 91 },
-      { name: "Amul",              region: "India",         leadTime: "8 days",  costPremium: "-5%",  availQty: "25 MT", aiScore: 78 },
-      { name: "Saputo",            region: "Canada",        leadTime: "7 days",  costPremium: "+7%",  availQty: "10 MT", aiScore: 72 },
-      { name: "Arla Foods",        region: "Denmark",       leadTime: "5 days",  costPremium: "+3%",  availQty: "14 MT", aiScore: 88 },
+      { name: "Supplier 07",  region: "France",        leadTime: "3 days",  costPremium: "+4%",  availQty: "12 MT", aiScore: 96 },
+      { name: "Supplier 08",  region: "Netherlands",   leadTime: "4 days",  costPremium: "+2%",  availQty: "18 MT", aiScore: 91 },
+      { name: "Supplier 09",  region: "India",         leadTime: "8 days",  costPremium: "-5%",  availQty: "25 MT", aiScore: 78 },
+      { name: "Supplier 10",  region: "Canada",        leadTime: "7 days",  costPremium: "+7%",  availQty: "10 MT", aiScore: 72 },
+      { name: "Supplier 11",  region: "Denmark",       leadTime: "5 days",  costPremium: "+3%",  availQty: "14 MT", aiScore: 88 },
     ],
   },
   Supplier: {
     heading: "Response Actions — Supplier Delay",
-    aiRec: "Expedite current Fonterra shipment via air freight — estimated delivery improves from 12 days to 4 days at +$8,200 cost.",
+    aiRec: "Expedite current Supplier 05 shipment via air freight — estimated delivery improves from 12 days to 4 days at +$8,200 cost.",
     aiConfidence: 87,
     actionLabel: "Execute Action",
     actions: [
       { icon: "✈", label: "Expedite Shipment",   desc: "Switch to air freight for pending orders. Reduces lead time by 60%.", tag: "+$8.2K" },
-      { icon: "🔄", label: "Switch to Alternate", desc: "Reroute demand to next-best qualified supplier (Lactalis).",         tag: "2-day setup" },
+      { icon: "🔄", label: "Switch to Alternate", desc: "Reroute demand to next-best qualified supplier (Supplier 07).",      tag: "2-day setup" },
       { icon: "✂", label: "Split Order",          desc: "Distribute remaining PO across 2 backup suppliers to reduce risk.",  tag: "Balanced" },
     ],
   },
