@@ -326,20 +326,20 @@ function KpiStrip({ kpis, tick }) {
 }
 
 /* ─── Alerts panel ───────────────────────────────────────────────────── */
-function AlertsPanel({ alerts, onAct }) {
+function AlertsPanel({ alerts, onAct, accelOn }) {
   const [filter, setFilter] = useState("All");
   const [criticalArrived, setCriticalArrived] = useState(false);
   const justArrived = useRef(false);
 
   useEffect(() => {
+    if (!accelOn) { setCriticalArrived(false); return; }
     const id = setTimeout(() => {
       justArrived.current = true;
       setCriticalArrived(true);
-      // Reset the "just arrived" flash after the animation
       setTimeout(() => { justArrived.current = false; }, 1200);
     }, 2500);
     return () => clearTimeout(id);
-  }, []);
+  }, [accelOn]);
 
   const cats = ["All", "Supplier", "Inventory", "Cold Chain"];
   const displayAlerts = criticalArrived ? alerts : alerts.filter(a => a.id !== 1);
@@ -1046,7 +1046,7 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
 
           {/* Row 2: alerts + supplier table */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 14, marginTop: 14 }}>
-            <AlertsPanel alerts={data.alerts.filter(a => !dismissedAlerts.has(a.id))} onAct={setActionAlert} />
+            <AlertsPanel alerts={data.alerts.filter(a => !dismissedAlerts.has(a.id))} onAct={setActionAlert} accelOn={accelOn} />
             <SupplierTable suppliers={data.suppliers} />
           </div>
 
