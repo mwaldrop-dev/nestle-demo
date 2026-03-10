@@ -1,0 +1,162 @@
+erDiagram
+    forecast_line {}
+    demand_forecast {}
+    sales_order {}
+    dashboard_config {}
+    kpi_measurement {}
+    kpi_target {}
+    alert_escalation {}
+    alert_acknowledgment {}
+    alert {}
+    alert_rule {}
+    loading_dock {}
+    delivery {}
+    shipment {}
+    route_waypoint {}
+    route {}
+    recall_event {}
+    corrective_action {}
+    non_conformance {}
+    quality_inspection {}
+    downtime_event {}
+    equipment_maintenance {}
+    work_order {}
+    factory {}
+    cycle_count_line {}
+    cycle_count {}
+    inventory_transaction {}
+    reorder_point_config {}
+    safety_stock_config {}
+    stock_level {}
+    warehouse {}
+    goods_receipt {}
+    purchase_order {}
+    purchase_requisition {}
+    approved_supplier_list {}
+    supplier_risk_assessment {}
+    supplier_audit {}
+    country {}
+    region {}
+    business_unit {
+        INT bu_id "PK"
+        VARCHAR bu_name
+        VARCHAR bu_code
+        INT region_id "FK"
+        INT parent_bu_id "FK"
+    }
+
+    site {
+        INT site_id "PK"
+        VARCHAR site_name
+        VARCHAR site_code
+        VARCHAR site_type
+        INT bu_id "FK"
+        INT country_id "FK"
+        VARCHAR city
+        VARCHAR address
+        DECIMAL latitude
+        DECIMAL longitude
+        BOOLEAN is_active
+    }
+
+    department {
+        INT department_id "PK"
+        VARCHAR department_name
+        VARCHAR department_code
+        INT site_id "FK"
+        INT parent_dept_id "FK"
+    }
+
+    role {
+        INT role_id "PK"
+        VARCHAR role_name
+        VARCHAR role_code
+        VARCHAR role_level
+    }
+
+    employee {
+        INT employee_id "PK"
+        VARCHAR employee_code
+        VARCHAR first_name
+        VARCHAR last_name
+        VARCHAR email
+        INT department_id "FK"
+        INT role_id "FK"
+        INT manager_id "FK"
+        DATE hire_date
+        BOOLEAN is_active
+    }
+
+    team {
+        INT team_id "PK"
+        VARCHAR team_name
+        VARCHAR team_type
+        INT lead_id "FK"
+        INT site_id "FK"
+    }
+
+    team_member {
+        INT team_member_id "PK"
+        INT team_id "FK"
+        INT employee_id "FK"
+        VARCHAR role_in_team
+        DATE joined_date
+    }
+
+    %% Relationships
+    region ||--o{ business_unit : "region_id"
+    business_unit ||--o{ business_unit : "parent_bu_id"
+    business_unit ||--o{ site : "bu_id"
+    country ||--o{ site : "country_id"
+    site ||--o{ department : "site_id"
+    department ||--o{ department : "parent_dept_id"
+    department ||--o{ employee : "department_id"
+    role ||--o{ employee : "role_id"
+    employee ||--o{ employee : "manager_id"
+    employee ||--o{ team : "lead_id"
+    site ||--o{ team : "site_id"
+    team ||--o{ team_member : "team_id"
+    employee ||--o{ team_member : "employee_id"
+    employee ||--o{ supplier_audit : "auditor_id"
+    employee ||--o{ supplier_risk_assessment : "assessor_id"
+    site ||--o{ approved_supplier_list : "site_id"
+    employee ||--o{ approved_supplier_list : "approved_by"
+    employee ||--o{ purchase_requisition : "requester_id"
+    site ||--o{ purchase_requisition : "site_id"
+    site ||--o{ purchase_order : "site_id"
+    employee ||--o{ purchase_order : "buyer_id"
+    site ||--o{ goods_receipt : "site_id"
+    employee ||--o{ goods_receipt : "received_by"
+    site ||--o{ warehouse : "site_id"
+    site ||--o{ stock_level : "site_id"
+    site ||--o{ safety_stock_config : "site_id"
+    site ||--o{ reorder_point_config : "site_id"
+    site ||--o{ inventory_transaction : "site_id"
+    employee ||--o{ inventory_transaction : "created_by"
+    employee ||--o{ cycle_count : "initiated_by"
+    employee ||--o{ cycle_count_line : "counted_by"
+    site ||--o{ factory : "site_id"
+    employee ||--o{ work_order : "supervisor_id"
+    employee ||--o{ equipment_maintenance : "technician_id"
+    employee ||--o{ downtime_event : "reported_by"
+    site ||--o{ quality_inspection : "site_id"
+    employee ||--o{ quality_inspection : "inspector_id"
+    employee ||--o{ non_conformance : "reported_by"
+    employee ||--o{ corrective_action : "assigned_to"
+    employee ||--o{ recall_event : "lead_id"
+    site ||--o{ route : "origin_site_id"
+    site ||--o{ route_waypoint : "site_id"
+    site ||--o{ shipment : "origin_site_id"
+    site ||--o{ delivery : "site_id"
+    employee ||--o{ delivery : "received_by"
+    site ||--o{ loading_dock : "site_id"
+    employee ||--o{ alert_rule : "created_by"
+    site ||--o{ alert : "site_id"
+    employee ||--o{ alert_acknowledgment : "acknowledged_by"
+    employee ||--o{ alert_escalation : "escalated_to"
+    site ||--o{ kpi_target : "site_id"
+    site ||--o{ kpi_measurement : "site_id"
+    employee ||--o{ dashboard_config : "owner_id"
+    site ||--o{ sales_order : "ship_to_site"
+    employee ||--o{ demand_forecast : "created_by"
+    site ||--o{ forecast_line : "site_id"

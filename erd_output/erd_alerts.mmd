@@ -1,0 +1,60 @@
+erDiagram
+    site {}
+    employee {}
+    alert_rule {
+        INT rule_id "PK"
+        VARCHAR rule_name
+        VARCHAR rule_code
+        VARCHAR domain
+        VARCHAR condition_type
+        VARCHAR metric
+        VARCHAR operator
+        DECIMAL threshold_value
+        VARCHAR severity
+        BOOLEAN is_active
+        INT created_by "FK"
+    }
+
+    alert {
+        INT alert_id "PK"
+        INT rule_id "FK"
+        TIMESTAMP alert_time
+        VARCHAR severity
+        VARCHAR title
+        TEXT message
+        VARCHAR domain
+        VARCHAR reference_type
+        INT reference_id
+        INT site_id "FK"
+        DECIMAL current_value
+        DECIMAL threshold_value
+        VARCHAR status
+    }
+
+    alert_acknowledgment {
+        INT ack_id "PK"
+        INT alert_id "FK"
+        INT acknowledged_by "FK"
+        TIMESTAMP ack_time
+        TEXT action_taken
+        TEXT resolution
+        TIMESTAMP resolved_time
+    }
+
+    alert_escalation {
+        INT escalation_id "PK"
+        INT alert_id "FK"
+        INT escalation_level
+        INT escalated_to "FK"
+        TIMESTAMP escalated_time
+        VARCHAR reason
+    }
+
+    %% Relationships
+    employee ||--o{ alert_rule : "created_by"
+    alert_rule ||--o{ alert : "rule_id"
+    site ||--o{ alert : "site_id"
+    alert ||--o{ alert_acknowledgment : "alert_id"
+    employee ||--o{ alert_acknowledgment : "acknowledged_by"
+    alert ||--o{ alert_escalation : "alert_id"
+    employee ||--o{ alert_escalation : "escalated_to"

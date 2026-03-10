@@ -1,0 +1,170 @@
+erDiagram
+    shipment {}
+    non_conformance {}
+    inventory_lot {}
+    invoice {}
+    purchase_order {}
+    site {}
+    fiscal_period {}
+    employee {}
+    certification_type {}
+    unit_of_measure {}
+    currency {}
+    ingredient {}
+    country {}
+    supplier_tier {
+        INT tier_id "PK"
+        VARCHAR tier_name
+        INT tier_level
+        VARCHAR description
+    }
+
+    supplier {
+        INT supplier_id "PK"
+        VARCHAR supplier_name
+        VARCHAR supplier_code
+        INT tier_id "FK"
+        INT country_id "FK"
+        VARCHAR city
+        VARCHAR primary_contact
+        VARCHAR email
+        VARCHAR phone
+        DATE onboarded_date
+        VARCHAR status
+        DECIMAL risk_score
+        BOOLEAN strategic_flag
+    }
+
+    supplier_contact {
+        INT contact_id "PK"
+        INT supplier_id "FK"
+        VARCHAR contact_name
+        VARCHAR title
+        VARCHAR email
+        VARCHAR phone
+        BOOLEAN is_primary
+    }
+
+    supplier_material {
+        INT supplier_material_id "PK"
+        INT supplier_id "FK"
+        INT ingredient_id "FK"
+        INT lead_time_days
+        DECIMAL min_order_qty
+        DECIMAL unit_price
+        INT currency_id "FK"
+        BOOLEAN is_preferred
+    }
+
+    supplier_contract {
+        INT contract_id "PK"
+        INT supplier_id "FK"
+        VARCHAR contract_ref
+        DATE start_date
+        DATE end_date
+        DECIMAL total_value
+        INT currency_id "FK"
+        VARCHAR payment_terms
+        VARCHAR incoterm
+        VARCHAR status
+    }
+
+    contract_line_item {
+        INT line_id "PK"
+        INT contract_id "FK"
+        INT ingredient_id "FK"
+        DECIMAL agreed_qty
+        DECIMAL unit_price
+        INT uom_id "FK"
+        VARCHAR delivery_schedule
+    }
+
+    supplier_certification {
+        INT supplier_cert_id "PK"
+        INT supplier_id "FK"
+        INT cert_type_id "FK"
+        VARCHAR cert_number
+        DATE issued_date
+        DATE expiry_date
+        VARCHAR status
+    }
+
+    supplier_audit {
+        INT audit_id "PK"
+        INT supplier_id "FK"
+        DATE audit_date
+        INT auditor_id "FK"
+        VARCHAR audit_type
+        DECIMAL overall_score
+        INT findings_count
+        VARCHAR status
+        DATE next_audit_date
+    }
+
+    supplier_risk_assessment {
+        INT assessment_id "PK"
+        INT supplier_id "FK"
+        DATE assessment_date
+        INT assessor_id "FK"
+        DECIMAL financial_risk
+        DECIMAL operational_risk
+        DECIMAL geopolitical_risk
+        DECIMAL quality_risk
+        DECIMAL overall_risk
+        VARCHAR risk_category
+    }
+
+    supplier_performance {
+        INT performance_id "PK"
+        INT supplier_id "FK"
+        INT period_id "FK"
+        DECIMAL otd_percentage
+        DECIMAL quality_score
+        DECIMAL responsiveness
+        DECIMAL cost_competitiveness
+        DECIMAL overall_rating
+        INT total_shipments
+        INT on_time_shipments
+        INT rejected_shipments
+    }
+
+    approved_supplier_list {
+        INT asl_id "PK"
+        INT supplier_id "FK"
+        INT ingredient_id "FK"
+        INT site_id "FK"
+        DATE approved_date
+        INT approved_by "FK"
+        VARCHAR status
+    }
+
+    %% Relationships
+    supplier_tier ||--o{ supplier : "tier_id"
+    country ||--o{ supplier : "country_id"
+    supplier ||--o{ supplier_contact : "supplier_id"
+    supplier ||--o{ supplier_material : "supplier_id"
+    ingredient ||--o{ supplier_material : "ingredient_id"
+    currency ||--o{ supplier_material : "currency_id"
+    supplier ||--o{ supplier_contract : "supplier_id"
+    currency ||--o{ supplier_contract : "currency_id"
+    supplier_contract ||--o{ contract_line_item : "contract_id"
+    ingredient ||--o{ contract_line_item : "ingredient_id"
+    unit_of_measure ||--o{ contract_line_item : "uom_id"
+    supplier ||--o{ supplier_certification : "supplier_id"
+    certification_type ||--o{ supplier_certification : "cert_type_id"
+    supplier ||--o{ supplier_audit : "supplier_id"
+    employee ||--o{ supplier_audit : "auditor_id"
+    supplier ||--o{ supplier_risk_assessment : "supplier_id"
+    employee ||--o{ supplier_risk_assessment : "assessor_id"
+    supplier ||--o{ supplier_performance : "supplier_id"
+    fiscal_period ||--o{ supplier_performance : "period_id"
+    supplier ||--o{ approved_supplier_list : "supplier_id"
+    ingredient ||--o{ approved_supplier_list : "ingredient_id"
+    site ||--o{ approved_supplier_list : "site_id"
+    employee ||--o{ approved_supplier_list : "approved_by"
+    supplier ||--o{ purchase_order : "supplier_id"
+    supplier_contract ||--o{ purchase_order : "contract_id"
+    supplier ||--o{ invoice : "supplier_id"
+    supplier ||--o{ inventory_lot : "supplier_id"
+    supplier ||--o{ non_conformance : "supplier_id"
+    supplier ||--o{ shipment : "supplier_id"

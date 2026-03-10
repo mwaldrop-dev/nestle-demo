@@ -1,0 +1,141 @@
+erDiagram
+    shipment_line {}
+    shipment {}
+    inventory_lot {}
+    currency {}
+    supplier_contract {}
+    supplier {}
+    unit_of_measure {}
+    ingredient {}
+    site {}
+    employee {}
+    purchase_requisition {
+        INT requisition_id "PK"
+        VARCHAR requisition_no
+        INT requester_id "FK"
+        INT site_id "FK"
+        TIMESTAMP created_date
+        DATE required_date
+        VARCHAR priority
+        VARCHAR status
+    }
+
+    purchase_requisition_line {
+        INT req_line_id "PK"
+        INT requisition_id "FK"
+        INT ingredient_id "FK"
+        DECIMAL quantity
+        INT uom_id "FK"
+        DECIMAL estimated_cost
+        INT line_number
+    }
+
+    purchase_order {
+        INT po_id "PK"
+        VARCHAR po_number
+        INT supplier_id "FK"
+        INT contract_id "FK"
+        INT site_id "FK"
+        INT buyer_id "FK"
+        TIMESTAMP order_date
+        DATE expected_delivery
+        DECIMAL total_amount
+        INT currency_id "FK"
+        VARCHAR incoterm
+        VARCHAR status
+    }
+
+    purchase_order_line {
+        INT po_line_id "PK"
+        INT po_id "FK"
+        INT ingredient_id "FK"
+        DECIMAL quantity
+        INT uom_id "FK"
+        DECIMAL unit_price
+        DECIMAL line_total
+        INT line_number
+    }
+
+    goods_receipt {
+        INT receipt_id "PK"
+        VARCHAR receipt_number
+        INT po_id "FK"
+        INT site_id "FK"
+        INT received_by "FK"
+        TIMESTAMP receipt_date
+        VARCHAR status
+    }
+
+    goods_receipt_line {
+        INT receipt_line_id "PK"
+        INT receipt_id "FK"
+        INT po_line_id "FK"
+        DECIMAL received_qty
+        DECIMAL accepted_qty
+        DECIMAL rejected_qty
+        VARCHAR lot_number
+        DATE expiry_date
+    }
+
+    invoice {
+        INT invoice_id "PK"
+        VARCHAR invoice_number
+        INT supplier_id "FK"
+        INT po_id "FK"
+        DATE invoice_date
+        DATE due_date
+        DECIMAL total_amount
+        INT currency_id "FK"
+        VARCHAR status
+    }
+
+    invoice_line {
+        INT invoice_line_id "PK"
+        INT invoice_id "FK"
+        INT po_line_id "FK"
+        VARCHAR description
+        DECIMAL quantity
+        DECIMAL unit_price
+        DECIMAL line_total
+    }
+
+    payment {
+        INT payment_id "PK"
+        INT invoice_id "FK"
+        DATE payment_date
+        DECIMAL amount
+        INT currency_id "FK"
+        VARCHAR payment_method
+        VARCHAR reference
+        VARCHAR status
+    }
+
+    %% Relationships
+    employee ||--o{ purchase_requisition : "requester_id"
+    site ||--o{ purchase_requisition : "site_id"
+    purchase_requisition ||--o{ purchase_requisition_line : "requisition_id"
+    ingredient ||--o{ purchase_requisition_line : "ingredient_id"
+    unit_of_measure ||--o{ purchase_requisition_line : "uom_id"
+    supplier ||--o{ purchase_order : "supplier_id"
+    supplier_contract ||--o{ purchase_order : "contract_id"
+    site ||--o{ purchase_order : "site_id"
+    employee ||--o{ purchase_order : "buyer_id"
+    currency ||--o{ purchase_order : "currency_id"
+    purchase_order ||--o{ purchase_order_line : "po_id"
+    ingredient ||--o{ purchase_order_line : "ingredient_id"
+    unit_of_measure ||--o{ purchase_order_line : "uom_id"
+    purchase_order ||--o{ goods_receipt : "po_id"
+    site ||--o{ goods_receipt : "site_id"
+    employee ||--o{ goods_receipt : "received_by"
+    goods_receipt ||--o{ goods_receipt_line : "receipt_id"
+    purchase_order_line ||--o{ goods_receipt_line : "po_line_id"
+    supplier ||--o{ invoice : "supplier_id"
+    purchase_order ||--o{ invoice : "po_id"
+    currency ||--o{ invoice : "currency_id"
+    invoice ||--o{ invoice_line : "invoice_id"
+    purchase_order_line ||--o{ invoice_line : "po_line_id"
+    invoice ||--o{ payment : "invoice_id"
+    currency ||--o{ payment : "currency_id"
+    goods_receipt ||--o{ inventory_lot : "receipt_id"
+    purchase_order ||--o{ shipment : "po_id"
+    purchase_order_line ||--o{ shipment_line : "po_line_id"

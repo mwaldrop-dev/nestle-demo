@@ -1,0 +1,447 @@
+erDiagram
+    %% ─── Master Data & Reference ───
+    region {
+    }
+    country {
+    }
+    currency {
+    }
+    unit_of_measure {
+    }
+    fiscal_period {
+    }
+    brand {
+    }
+    product_category {
+    }
+    product {
+    }
+    product_variant {
+    }
+    ingredient {
+    }
+    product_ingredient {
+    }
+    packaging_type {
+    }
+    regulatory_standard {
+    }
+    certification_type {
+    }
+
+    %% ─── Organization & Personnel ───
+    business_unit {
+    }
+    site {
+    }
+    department {
+    }
+    role {
+    }
+    employee {
+    }
+    team {
+    }
+    team_member {
+    }
+
+    %% ─── Supplier Management ───
+    supplier_tier {
+    }
+    supplier {
+    }
+    supplier_contact {
+    }
+    supplier_material {
+    }
+    supplier_contract {
+    }
+    contract_line_item {
+    }
+    supplier_certification {
+    }
+    supplier_audit {
+    }
+    supplier_risk_assessment {
+    }
+    supplier_performance {
+    }
+    approved_supplier_list {
+    }
+
+    %% ─── Procurement ───
+    purchase_requisition {
+    }
+    purchase_requisition_line {
+    }
+    purchase_order {
+    }
+    purchase_order_line {
+    }
+    goods_receipt {
+    }
+    goods_receipt_line {
+    }
+    invoice {
+    }
+    invoice_line {
+    }
+    payment {
+    }
+
+    %% ─── Inventory Management ───
+    warehouse {
+    }
+    warehouse_zone {
+    }
+    storage_location {
+    }
+    material_master {
+    }
+    inventory_lot {
+    }
+    stock_level {
+    }
+    safety_stock_config {
+    }
+    reorder_point_config {
+    }
+    inventory_transaction {
+    }
+    cycle_count {
+    }
+    cycle_count_line {
+    }
+
+    %% ─── Production & Manufacturing ───
+    factory {
+    }
+    production_line {
+    }
+    line_product_capability {
+    }
+    production_shift {
+    }
+    production_schedule {
+    }
+    work_order {
+    }
+    work_order_step {
+    }
+    production_batch {
+    }
+    batch_ingredient_usage {
+    }
+    equipment {
+    }
+    equipment_maintenance {
+    }
+    oee_record {
+    }
+    downtime_event {
+    }
+    downtime_reason {
+    }
+
+    %% ─── Quality Control ───
+    quality_parameter {
+    }
+    product_specification {
+    }
+    quality_inspection {
+    }
+    inspection_result {
+    }
+    non_conformance {
+    }
+    corrective_action {
+    }
+    lab_test {
+    }
+    lab_test_result {
+    }
+    recall_event {
+    }
+
+    %% ─── Logistics & Cold Chain ───
+    carrier {
+    }
+    vehicle_type {
+    }
+    vehicle {
+    }
+    route {
+    }
+    route_waypoint {
+    }
+    shipment {
+    }
+    shipment_line {
+    }
+    delivery {
+    }
+    delivery_line {
+    }
+    loading_dock {
+    }
+    temperature_reading {
+    }
+    tracking_event {
+    }
+    freight_cost {
+    }
+
+    %% ─── Alerts & Monitoring ───
+    alert_rule {
+    }
+    alert {
+    }
+    alert_acknowledgment {
+    }
+    alert_escalation {
+    }
+
+    %% ─── KPIs, Analytics & Demand ───
+    kpi_definition {
+    }
+    kpi_target {
+    }
+    kpi_measurement {
+    }
+    dashboard_config {
+    }
+    customer {
+    }
+    sales_order {
+    }
+    sales_order_line {
+    }
+    demand_forecast {
+    }
+    forecast_line {
+    }
+
+    %% ─── Relationships ───
+    region ||--o{ region : "parent_region_id"
+    region ||--o{ country : "region_id"
+    brand ||--o{ brand : "parent_brand_id"
+    product_category ||--o{ product_category : "parent_category_id"
+    brand ||--o{ product : "brand_id"
+    product_category ||--o{ product : "category_id"
+    unit_of_measure ||--o{ product : "base_uom_id"
+    product ||--o{ product_variant : "product_id"
+    unit_of_measure ||--o{ product_variant : "weight_uom_id"
+    country ||--o{ ingredient : "country_of_origin"
+    product ||--o{ product_ingredient : "product_id"
+    ingredient ||--o{ product_ingredient : "ingredient_id"
+    country ||--o{ regulatory_standard : "country_id"
+    regulatory_standard ||--o{ certification_type : "standard_id"
+    region ||--o{ business_unit : "region_id"
+    business_unit ||--o{ business_unit : "parent_bu_id"
+    business_unit ||--o{ site : "bu_id"
+    country ||--o{ site : "country_id"
+    site ||--o{ department : "site_id"
+    department ||--o{ department : "parent_dept_id"
+    department ||--o{ employee : "department_id"
+    role ||--o{ employee : "role_id"
+    employee ||--o{ employee : "manager_id"
+    employee ||--o{ team : "lead_id"
+    site ||--o{ team : "site_id"
+    team ||--o{ team_member : "team_id"
+    employee ||--o{ team_member : "employee_id"
+    supplier_tier ||--o{ supplier : "tier_id"
+    country ||--o{ supplier : "country_id"
+    supplier ||--o{ supplier_contact : "supplier_id"
+    supplier ||--o{ supplier_material : "supplier_id"
+    ingredient ||--o{ supplier_material : "ingredient_id"
+    currency ||--o{ supplier_material : "currency_id"
+    supplier ||--o{ supplier_contract : "supplier_id"
+    currency ||--o{ supplier_contract : "currency_id"
+    supplier_contract ||--o{ contract_line_item : "contract_id"
+    ingredient ||--o{ contract_line_item : "ingredient_id"
+    unit_of_measure ||--o{ contract_line_item : "uom_id"
+    supplier ||--o{ supplier_certification : "supplier_id"
+    certification_type ||--o{ supplier_certification : "cert_type_id"
+    supplier ||--o{ supplier_audit : "supplier_id"
+    employee ||--o{ supplier_audit : "auditor_id"
+    supplier ||--o{ supplier_risk_assessment : "supplier_id"
+    employee ||--o{ supplier_risk_assessment : "assessor_id"
+    supplier ||--o{ supplier_performance : "supplier_id"
+    fiscal_period ||--o{ supplier_performance : "period_id"
+    supplier ||--o{ approved_supplier_list : "supplier_id"
+    ingredient ||--o{ approved_supplier_list : "ingredient_id"
+    site ||--o{ approved_supplier_list : "site_id"
+    employee ||--o{ approved_supplier_list : "approved_by"
+    employee ||--o{ purchase_requisition : "requester_id"
+    site ||--o{ purchase_requisition : "site_id"
+    purchase_requisition ||--o{ purchase_requisition_line : "requisition_id"
+    ingredient ||--o{ purchase_requisition_line : "ingredient_id"
+    unit_of_measure ||--o{ purchase_requisition_line : "uom_id"
+    supplier ||--o{ purchase_order : "supplier_id"
+    supplier_contract ||--o{ purchase_order : "contract_id"
+    site ||--o{ purchase_order : "site_id"
+    employee ||--o{ purchase_order : "buyer_id"
+    currency ||--o{ purchase_order : "currency_id"
+    purchase_order ||--o{ purchase_order_line : "po_id"
+    ingredient ||--o{ purchase_order_line : "ingredient_id"
+    unit_of_measure ||--o{ purchase_order_line : "uom_id"
+    purchase_order ||--o{ goods_receipt : "po_id"
+    site ||--o{ goods_receipt : "site_id"
+    employee ||--o{ goods_receipt : "received_by"
+    goods_receipt ||--o{ goods_receipt_line : "receipt_id"
+    purchase_order_line ||--o{ goods_receipt_line : "po_line_id"
+    supplier ||--o{ invoice : "supplier_id"
+    purchase_order ||--o{ invoice : "po_id"
+    currency ||--o{ invoice : "currency_id"
+    invoice ||--o{ invoice_line : "invoice_id"
+    purchase_order_line ||--o{ invoice_line : "po_line_id"
+    invoice ||--o{ payment : "invoice_id"
+    currency ||--o{ payment : "currency_id"
+    site ||--o{ warehouse : "site_id"
+    unit_of_measure ||--o{ warehouse : "capacity_uom"
+    warehouse ||--o{ warehouse_zone : "warehouse_id"
+    warehouse_zone ||--o{ storage_location : "zone_id"
+    ingredient ||--o{ material_master : "ingredient_id"
+    product ||--o{ material_master : "product_id"
+    unit_of_measure ||--o{ material_master : "base_uom_id"
+    currency ||--o{ material_master : "currency_id"
+    material_master ||--o{ inventory_lot : "material_id"
+    storage_location ||--o{ inventory_lot : "location_id"
+    supplier ||--o{ inventory_lot : "supplier_id"
+    goods_receipt ||--o{ inventory_lot : "receipt_id"
+    unit_of_measure ||--o{ inventory_lot : "uom_id"
+    material_master ||--o{ stock_level : "material_id"
+    site ||--o{ stock_level : "site_id"
+    unit_of_measure ||--o{ stock_level : "uom_id"
+    material_master ||--o{ safety_stock_config : "material_id"
+    site ||--o{ safety_stock_config : "site_id"
+    unit_of_measure ||--o{ safety_stock_config : "uom_id"
+    material_master ||--o{ reorder_point_config : "material_id"
+    site ||--o{ reorder_point_config : "site_id"
+    unit_of_measure ||--o{ reorder_point_config : "uom_id"
+    material_master ||--o{ inventory_transaction : "material_id"
+    inventory_lot ||--o{ inventory_transaction : "lot_id"
+    site ||--o{ inventory_transaction : "site_id"
+    unit_of_measure ||--o{ inventory_transaction : "uom_id"
+    employee ||--o{ inventory_transaction : "created_by"
+    warehouse ||--o{ cycle_count : "warehouse_id"
+    employee ||--o{ cycle_count : "initiated_by"
+    cycle_count ||--o{ cycle_count_line : "count_id"
+    material_master ||--o{ cycle_count_line : "material_id"
+    storage_location ||--o{ cycle_count_line : "location_id"
+    employee ||--o{ cycle_count_line : "counted_by"
+    site ||--o{ factory : "site_id"
+    unit_of_measure ||--o{ factory : "capacity_uom_id"
+    factory ||--o{ production_line : "factory_id"
+    unit_of_measure ||--o{ production_line : "throughput_uom"
+    production_line ||--o{ line_product_capability : "line_id"
+    product ||--o{ line_product_capability : "product_id"
+    factory ||--o{ production_shift : "factory_id"
+    production_line ||--o{ production_schedule : "line_id"
+    product ||--o{ production_schedule : "product_id"
+    production_shift ||--o{ production_schedule : "shift_id"
+    unit_of_measure ||--o{ production_schedule : "uom_id"
+    production_schedule ||--o{ work_order : "schedule_id"
+    production_line ||--o{ work_order : "line_id"
+    product ||--o{ work_order : "product_id"
+    unit_of_measure ||--o{ work_order : "uom_id"
+    employee ||--o{ work_order : "supervisor_id"
+    work_order ||--o{ work_order_step : "wo_id"
+    work_order ||--o{ production_batch : "wo_id"
+    product ||--o{ production_batch : "product_id"
+    unit_of_measure ||--o{ production_batch : "uom_id"
+    production_batch ||--o{ batch_ingredient_usage : "batch_id"
+    ingredient ||--o{ batch_ingredient_usage : "ingredient_id"
+    inventory_lot ||--o{ batch_ingredient_usage : "lot_id"
+    unit_of_measure ||--o{ batch_ingredient_usage : "uom_id"
+    production_line ||--o{ equipment : "line_id"
+    factory ||--o{ equipment : "factory_id"
+    equipment ||--o{ equipment_maintenance : "equipment_id"
+    employee ||--o{ equipment_maintenance : "technician_id"
+    production_line ||--o{ oee_record : "line_id"
+    production_shift ||--o{ oee_record : "shift_id"
+    production_line ||--o{ downtime_event : "line_id"
+    equipment ||--o{ downtime_event : "equipment_id"
+    downtime_reason ||--o{ downtime_event : "reason_id"
+    employee ||--o{ downtime_event : "reported_by"
+    unit_of_measure ||--o{ quality_parameter : "uom_id"
+    product ||--o{ product_specification : "product_id"
+    quality_parameter ||--o{ product_specification : "parameter_id"
+    site ||--o{ quality_inspection : "site_id"
+    employee ||--o{ quality_inspection : "inspector_id"
+    quality_inspection ||--o{ inspection_result : "inspection_id"
+    quality_parameter ||--o{ inspection_result : "parameter_id"
+    quality_inspection ||--o{ non_conformance : "inspection_id"
+    production_batch ||--o{ non_conformance : "batch_id"
+    supplier ||--o{ non_conformance : "supplier_id"
+    employee ||--o{ non_conformance : "reported_by"
+    non_conformance ||--o{ corrective_action : "nc_id"
+    employee ||--o{ corrective_action : "assigned_to"
+    quality_inspection ||--o{ lab_test : "inspection_id"
+    lab_test ||--o{ lab_test_result : "test_id"
+    quality_parameter ||--o{ lab_test_result : "parameter_id"
+    product ||--o{ recall_event : "product_id"
+    production_batch ||--o{ recall_event : "batch_id"
+    employee ||--o{ recall_event : "lead_id"
+    country ||--o{ carrier : "country_id"
+    carrier ||--o{ vehicle : "carrier_id"
+    vehicle_type ||--o{ vehicle : "vehicle_type_id"
+    site ||--o{ route : "origin_site_id"
+    route ||--o{ route_waypoint : "route_id"
+    site ||--o{ route_waypoint : "site_id"
+    purchase_order ||--o{ shipment : "po_id"
+    supplier ||--o{ shipment : "supplier_id"
+    carrier ||--o{ shipment : "carrier_id"
+    vehicle ||--o{ shipment : "vehicle_id"
+    route ||--o{ shipment : "route_id"
+    site ||--o{ shipment : "origin_site_id"
+    shipment ||--o{ shipment_line : "shipment_id"
+    material_master ||--o{ shipment_line : "material_id"
+    unit_of_measure ||--o{ shipment_line : "uom_id"
+    purchase_order_line ||--o{ shipment_line : "po_line_id"
+    shipment ||--o{ delivery : "shipment_id"
+    site ||--o{ delivery : "site_id"
+    employee ||--o{ delivery : "received_by"
+    loading_dock ||--o{ delivery : "dock_id"
+    delivery ||--o{ delivery_line : "delivery_id"
+    material_master ||--o{ delivery_line : "material_id"
+    unit_of_measure ||--o{ delivery_line : "uom_id"
+    site ||--o{ loading_dock : "site_id"
+    vehicle ||--o{ temperature_reading : "vehicle_id"
+    shipment ||--o{ temperature_reading : "shipment_id"
+    warehouse ||--o{ temperature_reading : "warehouse_id"
+    shipment ||--o{ tracking_event : "shipment_id"
+    shipment ||--o{ freight_cost : "shipment_id"
+    carrier ||--o{ freight_cost : "carrier_id"
+    currency ||--o{ freight_cost : "currency_id"
+    employee ||--o{ alert_rule : "created_by"
+    alert_rule ||--o{ alert : "rule_id"
+    site ||--o{ alert : "site_id"
+    alert ||--o{ alert_acknowledgment : "alert_id"
+    employee ||--o{ alert_acknowledgment : "acknowledged_by"
+    alert ||--o{ alert_escalation : "alert_id"
+    employee ||--o{ alert_escalation : "escalated_to"
+    unit_of_measure ||--o{ kpi_definition : "uom_id"
+    kpi_definition ||--o{ kpi_target : "kpi_id"
+    site ||--o{ kpi_target : "site_id"
+    fiscal_period ||--o{ kpi_target : "period_id"
+    kpi_definition ||--o{ kpi_measurement : "kpi_id"
+    site ||--o{ kpi_measurement : "site_id"
+    fiscal_period ||--o{ kpi_measurement : "period_id"
+    employee ||--o{ dashboard_config : "owner_id"
+    country ||--o{ customer : "country_id"
+    region ||--o{ customer : "region_id"
+    customer ||--o{ sales_order : "customer_id"
+    site ||--o{ sales_order : "ship_to_site"
+    currency ||--o{ sales_order : "currency_id"
+    sales_order ||--o{ sales_order_line : "order_id"
+    product ||--o{ sales_order_line : "product_id"
+    product_variant ||--o{ sales_order_line : "variant_id"
+    unit_of_measure ||--o{ sales_order_line : "uom_id"
+    fiscal_period ||--o{ demand_forecast : "period_id"
+    employee ||--o{ demand_forecast : "created_by"
+    demand_forecast ||--o{ forecast_line : "forecast_id"
+    product ||--o{ forecast_line : "product_id"
+    site ||--o{ forecast_line : "site_id"
+    region ||--o{ forecast_line : "region_id"
+    unit_of_measure ||--o{ forecast_line : "uom_id"

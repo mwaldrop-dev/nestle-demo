@@ -37,6 +37,49 @@ function useClock() {
   return now;
 }
 
+/* ─── Refresh cycle (5-min) ──────────────────────────────────────────── */
+const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+function useDataRefresh() {
+  const [tick, setTick] = useState(0);
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setIsRefreshing(true);
+      setTimeout(() => {
+        setTick(t => t + 1);
+        setLastRefresh(new Date());
+        setIsRefreshing(false);
+      }, 800); // brief "loading" flash
+    }, REFRESH_INTERVAL);
+    return () => clearInterval(id);
+  }, []);
+
+  return { tick, lastRefresh, isRefreshing };
+}
+
+/* ─── Animated value wrapper ─────────────────────────────────────────── */
+function AnimVal({ children, tick }) {
+  const [flash, setFlash] = useState(false);
+  const prevTick = useRef(tick);
+  useEffect(() => {
+    if (tick !== prevTick.current) {
+      setFlash(true);
+      prevTick.current = tick;
+      const id = setTimeout(() => setFlash(false), 600);
+      return () => clearTimeout(id);
+    }
+  }, [tick]);
+  return (
+    <span style={{
+      transition: "color 0.3s, opacity 0.3s",
+      opacity: flash ? 0.5 : 1,
+    }}>{children}</span>
+  );
+}
+
 /* ─── Fake data ──────────────────────────────────────────────────────── */
 function makeThroughput() {
   const labels = ["06:00","06:30","07:00","07:30","08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00"];
@@ -56,51 +99,117 @@ function makeOtdHistory() {
 }
 
 function makeInventoryDays() {
+  const base = [
+    { material: "Cocoa",    base: 18, min: 14 },
+    { material: "Palm Oil", base: 11, min: 10 },
+    { material: "Sugar",    base: 24, min: 12 },
+    { material: "Milk Pwd", base: 8,  min: 10 },
+    { material: "Wheat",    base: 21, min: 12 },
+    { material: "Hazelnuts",base: 15, min: 8  },
+  ];
+  return base.map(b => {
+    const days = Math.max(1, b.base + Math.round((Math.random() - 0.5) * 4));
+    const status = days <= b.min * 0.8 ? "critical" : days <= b.min ? "low" : "ok";
+    return { material: b.material, days, min: b.min, status };
+  });
+}
+
+function makeSuppliers() {
+  const base = [
+    { id:"S-01", name:"Olam International",  material:"Cocoa",    region:"Côte d'Ivoire", baseOtd:94, shipments:3 },
+    { id:"S-02", name:"ADM Cocoa",            material:"Cocoa",    region:"Netherlands",   baseOtd:89, shipments:1 },
+    { id:"S-03", name:"Wilmar International", material:"Palm Oil", region:"Singapore",     baseOtd:91, shipments:2 },
+    { id:"S-04", name:"Südzucker AG",         material:"Sugar",    region:"Germany",       baseOtd:98, shipments:4 },
+    { id:"S-05", name:"Fonterra",             material:"Milk Pwd", region:"New Zealand",   baseOtd:72, shipments:2 },
+    { id:"S-06", name:"Olam Agri",            material:"Wheat",    region:"Ukraine",       baseOtd:97, shipments:3 },
+  ];
+  return base.map(s => {
+    const otd = Math.min(100, Math.max(50, s.baseOtd + Math.round((Math.random() - 0.5) * 6)));
+    const status = otd < 80 ? "delayed" : otd < 90 ? "at-risk" : "on-time";
+    return { ...s, otd, status };
+  });
+}
+
+function makeColdChain() {
+  const base = [
+    { id:"TRK-441", route:"Lyon → Geneva",       baseTemp:2.9, eta:"14:30" },
+    { id:"TRK-443", route:"Hamburg → Berlin",    baseTemp:3.4, eta:"15:10" },
+    { id:"TRK-447", route:"Zürich → Milan",      baseTemp:3.8, eta:"16:45" },
+    { id:"TRK-451", route:"Paris → Brussels",    baseTemp:2.1, eta:"13:55" },
+    { id:"TRK-458", route:"Rotterdam → Cologne", baseTemp:3.7, eta:"14:20" },
+  ];
+  return base.map(r => {
+    const temp = +(r.baseTemp + (Math.random() - 0.4) * 0.6).toFixed(1);
+    const status = temp > 3.5 ? "watch" : "nominal";
+    return { ...r, temp, status };
+  });
+}
+
+function makeAlerts() {
+  const now = new Date();
+  const fmt = d => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   return [
-    { material: "Cocoa",    days: 18, min: 14, status: "ok" },
-    { material: "Palm Oil", days: 11, min: 10, status: "low" },
-    { material: "Sugar",    days: 24, min: 12, status: "ok" },
-    { material: "Milk Pwd", days: 8,  min: 10, status: "critical" },
-    { material: "Wheat",    days: 21, min: 12, status: "ok" },
-    { material: "Hazelnuts",days: 15, min: 8,  status: "ok" },
+    { id:1, time: fmt(new Date(now - 3*60000)),  sev:"critical", msg:"Milk Pwd stock below safety threshold — cover remaining", category:"Inventory" },
+    { id:2, time: fmt(new Date(now - 18*60000)), sev:"warning",  msg:"Fonterra OTD dropped — shipments delayed",                category:"Supplier"  },
+    { id:3, time: fmt(new Date(now - 32*60000)), sev:"warning",  msg:"TRK-447 temp trending toward 4°C ceiling — monitor advised", category:"Cold Chain"},
+    { id:4, time: fmt(new Date(now - 89*60000)), sev:"info",     msg:"Palm Oil inventory approaching reorder point",             category:"Inventory" },
+    { id:5, time: fmt(new Date(now - 195*60000)),sev:"info",     msg:"Südzucker AG delivery confirmed — shipments on schedule",  category:"Supplier"  },
   ];
 }
 
-const THROUGHPUT  = makeThroughput();
-const OTD_HISTORY = makeOtdHistory();
-const INVENTORY   = makeInventoryDays();
+function makeFactories() {
+  const base = [
+    { name:"Broc (CH)",         lines:6, baseOee:93, running:6 },
+    { name:"Hamburg (DE)",      lines:4, baseOee:87, running:4 },
+    { name:"York (GB)",         lines:5, baseOee:78, running:4 },
+    { name:"Biessenhofen (DE)", lines:3, baseOee:95, running:3 },
+  ];
+  return base.map(f => {
+    const oee = Math.min(100, Math.max(60, f.baseOee + Math.round((Math.random() - 0.5) * 6)));
+    const status = oee < 80 ? "warning" : "ok";
+    return { ...f, oee, status };
+  });
+}
 
-const SUPPLIERS = [
-  { id:"S-01", name:"Olam International",  material:"Cocoa",    region:"Côte d'Ivoire", otd:94, shipments:3, status:"on-time"  },
-  { id:"S-02", name:"ADM Cocoa",            material:"Cocoa",    region:"Netherlands",   otd:89, shipments:1, status:"on-time"  },
-  { id:"S-03", name:"Wilmar International", material:"Palm Oil", region:"Singapore",     otd:91, shipments:2, status:"at-risk"  },
-  { id:"S-04", name:"Südzucker AG",         material:"Sugar",    region:"Germany",       otd:98, shipments:4, status:"on-time"  },
-  { id:"S-05", name:"Fonterra",             material:"Milk Pwd", region:"New Zealand",   otd:72, shipments:2, status:"delayed"  },
-  { id:"S-06", name:"Olam Agri",            material:"Wheat",    region:"Ukraine",       otd:97, shipments:3, status:"on-time"  },
-];
+function makeKpis(inv, suppliers, coldChain, factories) {
+  const avgOtd = (suppliers.reduce((s, x) => s + x.otd, 0) / suppliers.length).toFixed(1);
+  const riskSkus = inv.filter(i => i.status !== "ok").length;
+  const watchVehicles = coldChain.filter(c => c.status === "watch").length;
+  const totalLines = factories.reduce((s, f) => s + f.lines, 0);
+  const runningLines = factories.reduce((s, f) => s + f.running, 0);
+  const avgThroughput = (12200 + Math.round(Math.random() * 300)).toLocaleString();
+  return [
+    { label: "On-Time Delivery", value: avgOtd + "%", delta: "vs 90% target",   status: +avgOtd >= 90 ? "ok" : "warning" },
+    { label: "Lines Running",    value: `${runningLines}/${totalLines}`, delta: `${totalLines - runningLines} stopped`, status: runningLines < totalLines ? "warning" : "ok" },
+    { label: "Alerts Open",      value: "5",      delta: "2 new today",    status: "warning" },
+    { label: "Cold Chain OK",    value: `${coldChain.length - watchVehicles}/${coldChain.length}`, delta: `${watchVehicles} on watch`, status: watchVehicles > 0 ? "watch" : "ok" },
+    { label: "Inventory Risk",   value: `${riskSkus} SKU${riskSkus !== 1 ? "s" : ""}`, delta: inv.filter(i => i.status !== "ok").map(i => i.material).join(", ") || "—", status: riskSkus > 0 ? "critical" : "ok" },
+    { label: "Throughput",       value: avgThroughput, delta: "units/hr avg",  status: "ok" },
+  ];
+}
 
-const COLD_CHAIN = [
-  { id:"TRK-441", route:"Lyon → Geneva",       temp:2.9, status:"nominal",  eta:"14:30" },
-  { id:"TRK-443", route:"Hamburg → Berlin",    temp:3.4, status:"nominal",  eta:"15:10" },
-  { id:"TRK-447", route:"Zürich → Milan",      temp:3.8, status:"watch",    eta:"16:45" },
-  { id:"TRK-451", route:"Paris → Brussels",    temp:2.1, status:"nominal",  eta:"13:55" },
-  { id:"TRK-458", route:"Rotterdam → Cologne", temp:3.7, status:"watch",    eta:"14:20" },
-];
+/* ─── Central data hook — regenerates every tick ────────────────────── */
+function useDashboardData(tick) {
+  const [data, setData] = useState(() => generateAll());
 
-const ALERTS = [
-  { id:1, time:"11:47", sev:"critical", msg:"Milk Pwd stock below safety threshold — 8 days cover remaining", category:"Inventory" },
-  { id:2, time:"11:32", sev:"warning",  msg:"Fonterra OTD dropped to 72% — 2 shipments delayed 18h",          category:"Supplier"  },
-  { id:3, time:"10:58", sev:"warning",  msg:"TRK-447 temp trending toward 4°C ceiling — monitor advised",      category:"Cold Chain"},
-  { id:4, time:"09:41", sev:"info",     msg:"Palm Oil inventory approaching reorder point (11 days cover)",    category:"Inventory" },
-  { id:5, time:"08:15", sev:"info",     msg:"Südzucker AG delivery confirmed — 3 shipments on schedule",       category:"Supplier"  },
-];
+  function generateAll() {
+    const throughput = makeThroughput();
+    const otdHistory = makeOtdHistory();
+    const inventory  = makeInventoryDays();
+    const suppliers  = makeSuppliers();
+    const coldChain  = makeColdChain();
+    const alerts     = makeAlerts();
+    const factories  = makeFactories();
+    const kpis       = makeKpis(inventory, suppliers, coldChain, factories);
+    return { throughput, otdHistory, inventory, suppliers, coldChain, alerts, factories, kpis };
+  }
 
-const FACTORIES = [
-  { name:"Broc (CH)",       lines:6, oee:93, running:6, status:"ok"      },
-  { name:"Hamburg (DE)",    lines:4, oee:87, running:4, status:"ok"      },
-  { name:"York (GB)",       lines:5, oee:78, running:4, status:"warning" },
-  { name:"Biessenhofen (DE)",lines:3,oee:95, running:3, status:"ok"      },
-];
+  useEffect(() => {
+    setData(generateAll());
+  }, [tick]);
+
+  return data;
+}
 
 /* ─── Helpers ────────────────────────────────────────────────────────── */
 function $f(n) { return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 }); }
@@ -157,15 +266,7 @@ function Card({ title, subtitle, action, children, style = {} }) {
 }
 
 /* ─── KPI strip ──────────────────────────────────────────────────────── */
-function KpiStrip() {
-  const kpis = [
-    { label: "On-Time Delivery", value: "91.4%", delta: "+1.2%", trend: "up",   status: "ok"      },
-    { label: "Lines Running",    value: "17/18",  delta: "1 planned stop",trend:"flat",status:"warning"},
-    { label: "Alerts Open",      value: "5",      delta: "2 new today",  trend:"up",  status:"warning"},
-    { label: "Cold Chain OK",    value: "21/23",  delta: "2 on watch",   trend:"flat",status:"watch" },
-    { label: "Inventory Risk",   value: "2 SKUs", delta: "Milk, Palm Oil",trend:"up", status:"critical"},
-    { label: "Throughput",       value: "12,340", delta: "units/hr avg", trend:"flat",status:"ok"    },
-  ];
+function KpiStrip({ kpis, tick }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
       {kpis.map(k => {
@@ -176,9 +277,10 @@ function KpiStrip() {
             borderTop: `3px solid ${c}`,
             borderRadius: 8, padding: "12px 16px",
             boxShadow: "0 1px 6px rgba(0,0,0,0.35)",
+            transition: "border-color 0.5s",
           }}>
             <div style={{ fontSize: 10, color: T.sub, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 6, fontFamily: "'IBM Plex Mono', monospace" }}>{k.label}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: T.text, lineHeight: 1, fontFamily: "'IBM Plex Sans', sans-serif" }}>{k.value}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: T.text, lineHeight: 1, fontFamily: "'IBM Plex Sans', sans-serif" }}><AnimVal tick={tick}>{k.value}</AnimVal></div>
             <div style={{ fontSize: 11, color: T.muted, marginTop: 5 }}>{k.delta}</div>
           </div>
         );
@@ -188,10 +290,10 @@ function KpiStrip() {
 }
 
 /* ─── Alerts panel ───────────────────────────────────────────────────── */
-function AlertsPanel() {
+function AlertsPanel({ alerts }) {
   const [filter, setFilter] = useState("All");
   const cats = ["All", "Supplier", "Inventory", "Cold Chain"];
-  const visible = filter === "All" ? ALERTS : ALERTS.filter(a => a.category === filter);
+  const visible = filter === "All" ? alerts : alerts.filter(a => a.category === filter);
   const sevIcon = { critical: "🔴", warning: "🟡", info: "🔵" };
   return (
     <Card title="Active Alerts" subtitle="Last refreshed 2 min ago" action="View all →">
@@ -231,7 +333,7 @@ function AlertsPanel() {
 }
 
 /* ─── Supplier table ─────────────────────────────────────────────────── */
-function SupplierTable() {
+function SupplierTable({ suppliers }) {
   const cols = ["ID", "Supplier", "Material", "Region", "OTD", "Shipments Due", "Status"];
   return (
     <Card title="Tier-1 Supplier Status" subtitle="47 active suppliers · showing flagged + recent" action="Full list →">
@@ -244,7 +346,7 @@ function SupplierTable() {
           </tr>
         </thead>
         <tbody>
-          {SUPPLIERS.map((s, i) => {
+          {suppliers.map((s, i) => {
             const isDelayed = s.status === "delayed";
             const isRisk    = s.status === "at-risk";
             return (
@@ -266,7 +368,7 @@ function SupplierTable() {
 }
 
 /* ─── Cold chain table ───────────────────────────────────────────────── */
-function ColdChainTable() {
+function ColdChainTable({ coldChain }) {
   return (
     <Card title="Cold Chain — Active Routes" subtitle="23 refrigerated vehicles · 2 on watch" action="Map view →">
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -278,7 +380,7 @@ function ColdChainTable() {
           </tr>
         </thead>
         <tbody>
-          {COLD_CHAIN.map(r => (
+          {coldChain.map(r => (
             <tr key={r.id} style={{ background: r.status === "watch" ? T.amberBg : "transparent" }}>
               <td style={{ padding: "9px 10px 9px 0", fontFamily: "monospace", color: T.primary, fontSize: 11, borderBottom: `1px solid ${T.border}` }}>{r.id}</td>
               <td style={{ padding: "9px 10px 9px 0", color: T.text, borderBottom: `1px solid ${T.border}` }}>{r.route}</td>
@@ -297,11 +399,11 @@ function ColdChainTable() {
 }
 
 /* ─── Inventory bars ─────────────────────────────────────────────────── */
-function InventoryPanel() {
+function InventoryPanel({ inventory }) {
   return (
     <Card title="Ingredient Cover" subtitle="Days of inventory on hand vs. safety stock minimum">
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {INVENTORY.map(item => {
+        {inventory.map(item => {
           const pct = Math.min((item.days / 30) * 100, 100);
           const minPct = (item.min / 30) * 100;
           const c = statusColor(item.status);
@@ -333,11 +435,11 @@ function InventoryPanel() {
 }
 
 /* ─── Factory status ─────────────────────────────────────────────────── */
-function FactoryPanel() {
+function FactoryPanel({ factories }) {
   return (
     <Card title="Factory OEE — Today" subtitle="4 production sites">
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {FACTORIES.map(f => {
+        {factories.map(f => {
           const c = f.oee >= 90 ? T.green : f.oee >= 80 ? T.amber : T.red;
           return (
             <div key={f.name} style={{
@@ -363,11 +465,11 @@ function FactoryPanel() {
 }
 
 /* ─── Throughput chart ───────────────────────────────────────────────── */
-function ThroughputChart() {
+function ThroughputChart({ throughput }) {
   return (
     <Card title="KitKat Line Throughput — Today" subtitle="Factory Broc · 6 lines · units/hr">
       <ResponsiveContainer width="100%" height={150}>
-        <AreaChart data={THROUGHPUT} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
+        <AreaChart data={throughput} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
           <defs>
             <linearGradient id="tpGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%"  stopColor={T.primary} stopOpacity={0.15} />
@@ -391,11 +493,11 @@ function ThroughputChart() {
 }
 
 /* ─── OTD trend ──────────────────────────────────────────────────────── */
-function OtdTrendChart() {
+function OtdTrendChart({ otdHistory }) {
   return (
     <Card title="Network OTD — Rolling 14 Days" subtitle="All Tier-1 suppliers · avg on-time delivery %">
       <ResponsiveContainer width="100%" height={150}>
-        <LineChart data={OTD_HISTORY} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
+        <LineChart data={otdHistory} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
           <CartesianGrid stroke={T.border} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 9 }} tickLine={false} />
           <YAxis domain={[85, 100]} tick={{ fill: T.muted, fontSize: 9 }} tickLine={false} axisLine={false} tickFormatter={v => v + "%"} />
@@ -424,13 +526,67 @@ const NAV_ITEMS = [
 ];
 
 /* ─── Root ───────────────────────────────────────────────────────────── */
-export default function OperationalDashboard() {
-  const now = useClock();
+/* ─── Refresh timer display ─────────────────────────────────────────── */
+function RefreshTimer({ lastRefresh, isRefreshing, now }) {
+  const elapsed = Math.floor((now - lastRefresh) / 1000);
+  const elapsedMin = Math.floor(elapsed / 60);
+  const elapsedSec = elapsed % 60;
+  const remaining = Math.max(0, 5 * 60 - elapsed);
+  const remainingMin = Math.floor(remaining / 60);
+  const remainingSec = remaining % 60;
+  const progress = Math.min(elapsed / (5 * 60), 1);
+
+  const agoStr = elapsedMin > 0
+    ? `${elapsedMin}m ${elapsedSec}s ago`
+    : `${elapsedSec}s ago`;
+  const nextStr = remaining > 0
+    ? `${remainingMin}m ${remainingSec}s`
+    : "now";
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      {isRefreshing && (
+        <span style={{
+          fontSize: 10, color: T.primary, fontWeight: 700,
+          animation: "pulse 0.8s ease-in-out infinite",
+        }}>REFRESHING…</span>
+      )}
+      <div style={{ fontSize: 11, color: T.muted }}>
+        Refreshed <strong style={{ color: T.text }}>{agoStr}</strong> · next in {nextStr}
+      </div>
+      {/* Mini progress bar */}
+      <div style={{ width: 60, height: 3, background: T.border, borderRadius: 2, overflow: "hidden" }}>
+        <div style={{
+          height: "100%", width: `${progress * 100}%`,
+          background: progress > 0.9 ? T.amber : T.primary,
+          borderRadius: 2, transition: "width 1s linear",
+        }} />
+      </div>
+    </div>
+  );
+}
+
+/* ─── Dashboard (accepts optional simulated time + data) ────────────── */
+function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
+  const realNow = useClock();
+  const { tick: autoTick, lastRefresh: autoLast, isRefreshing: autoRefreshing } = useDataRefresh();
+  const autoData = useDashboardData(frozen ? 0 : (overrideTick ?? autoTick));
+
+  const now = simTime || realNow;
+  const data = overrideData || autoData;
+  const tick = overrideTick ?? autoTick;
+  const isRefreshing = frozen ? false : autoRefreshing;
+  const lastRefresh = frozen ? now : autoLast;
+
   const timeStr = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const dateStr = now.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'IBM Plex Sans', 'Segoe UI', sans-serif", background: T.bg }}>
+    <div style={{
+      display: "flex", minHeight: "100vh",
+      fontFamily: "'IBM Plex Sans', 'Segoe UI', sans-serif", background: T.bg,
+      opacity: isRefreshing ? 0.7 : 1, transition: "opacity 0.4s",
+    }}>
 
       {/* ── Sidebar ── */}
       <div style={{ width: 180, minWidth: 180, background: T.nav, display: "flex", flexDirection: "column" }}>
@@ -487,39 +643,191 @@ export default function OperationalDashboard() {
               <span style={{ fontSize: 11, color: T.green, fontWeight: 700, fontFamily: "monospace" }}>LIVE</span>
               <span style={{ fontSize: 11, color: T.sub, fontFamily: "monospace" }}>{timeStr}</span>
             </div>
-            <div style={{ fontSize: 11, color: T.muted }}>
-              Refreshed <strong style={{ color: T.text }}>2 min ago</strong> · next in 3 min
-            </div>
+            <RefreshTimer lastRefresh={lastRefresh} isRefreshing={isRefreshing} now={now} />
           </div>
         </div>
 
         {/* Content */}
         <div style={{ padding: "16px 20px 32px" }}>
           {/* KPI strip */}
-          <KpiStrip />
+          <KpiStrip kpis={data.kpis} tick={tick} />
 
           {/* Row 2: alerts + supplier table */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 14, marginTop: 14 }}>
-            <AlertsPanel />
-            <SupplierTable />
+            <AlertsPanel alerts={data.alerts} />
+            <SupplierTable suppliers={data.suppliers} />
           </div>
 
           {/* Row 3: throughput + OTD trend + inventory + factory */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
-            <ThroughputChart />
-            <OtdTrendChart />
+            <ThroughputChart throughput={data.throughput} />
+            <OtdTrendChart otdHistory={data.otdHistory} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
-            <InventoryPanel />
-            <FactoryPanel />
+            <InventoryPanel inventory={data.inventory} />
+            <FactoryPanel factories={data.factories} />
           </div>
 
           {/* Row 4: cold chain */}
           <div style={{ marginTop: 14 }}>
-            <ColdChainTable />
+            <ColdChainTable coldChain={data.coldChain} />
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+/* ─── Demo mode: side-by-side with accelerated time ─────────────────── */
+function DemoView() {
+  const FIVE_HOURS = 5 * 60 * 60 * 1000;
+  const SIM_STEP   = 5 * 60 * 1000;       // each tick = 5 simulated minutes
+  const TICK_MS    = 2000;                 // tick every 2 real seconds
+
+  // Frozen left-side data (generated once)
+  const [frozenData] = useState(() => {
+    const throughput = makeThroughput();
+    const otdHistory = makeOtdHistory();
+    const inventory  = makeInventoryDays();
+    const suppliers  = makeSuppliers();
+    const coldChain  = makeColdChain();
+    const alerts     = makeAlerts();
+    const factories  = makeFactories();
+    const kpis       = makeKpis(inventory, suppliers, coldChain, factories);
+    return { throughput, otdHistory, inventory, suppliers, coldChain, alerts, factories, kpis };
+  });
+
+  const frozenTime = useRef(new Date(Date.now() - FIVE_HOURS));
+
+  // Accelerated right side
+  const [simTick, setSimTick] = useState(0);
+  const [simTime, setSimTime] = useState(() => new Date(Date.now() - FIVE_HOURS));
+  const [liveData, setLiveData] = useState(() => {
+    const throughput = makeThroughput();
+    const otdHistory = makeOtdHistory();
+    const inventory  = makeInventoryDays();
+    const suppliers  = makeSuppliers();
+    const coldChain  = makeColdChain();
+    const alerts     = makeAlerts();
+    const factories  = makeFactories();
+    const kpis       = makeKpis(inventory, suppliers, coldChain, factories);
+    return { throughput, otdHistory, inventory, suppliers, coldChain, alerts, factories, kpis };
+  });
+  const [isFlashing, setIsFlashing] = useState(false);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setIsFlashing(true);
+      setTimeout(() => {
+        setSimTime(prev => new Date(prev.getTime() + SIM_STEP));
+        setSimTick(t => t + 1);
+        // Regenerate data
+        const throughput = makeThroughput();
+        const otdHistory = makeOtdHistory();
+        const inventory  = makeInventoryDays();
+        const suppliers  = makeSuppliers();
+        const coldChain  = makeColdChain();
+        const alerts     = makeAlerts();
+        const factories  = makeFactories();
+        const kpis       = makeKpis(inventory, suppliers, coldChain, factories);
+        setLiveData({ throughput, otdHistory, inventory, suppliers, coldChain, alerts, factories, kpis });
+        setIsFlashing(false);
+      }, 300);
+    }, TICK_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  // How many simulated minutes have elapsed
+  const simElapsed = simTick * 5;
+  const simHrs = Math.floor(simElapsed / 60);
+  const simMins = simElapsed % 60;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "#000", overflow: "hidden" }}>
+      {/* Top banner */}
+      <div style={{
+        padding: "10px 24px", background: "#0B0F1A",
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        borderBottom: "1px solid #2A3347", flexShrink: 0,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <img src="/nestle-logo.svg" alt="Nestlé" style={{ width: 50, height: "auto" }} />
+          <span style={{ color: "#E2EAF4", fontSize: 16, fontWeight: 700, fontFamily: "'IBM Plex Sans', sans-serif" }}>
+            Supply Chain Operations — Live Data Demo
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <span style={{ color: "#7A95B0", fontSize: 12, fontFamily: "monospace" }}>
+            Simulated: +{simHrs}h {simMins}m elapsed ({simTick} refreshes)
+          </span>
+          <span style={{ color: "#FBBF24", fontSize: 12, fontWeight: 700, fontFamily: "monospace" }}>
+            5 min / 2 sec
+          </span>
+        </div>
+      </div>
+
+      {/* Side by side dashboards */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {/* Left: frozen */}
+        <div style={{ flex: 1, position: "relative", borderRight: "2px solid #2A3347", overflow: "hidden" }}>
+          <div style={{
+            position: "absolute", top: 0, left: 0, zIndex: 10,
+            width: "100%", padding: "6px 0", textAlign: "center",
+            background: "linear-gradient(180deg, rgba(42,51,71,0.95) 0%, rgba(42,51,71,0) 100%)",
+          }}>
+            <span style={{
+              color: "#7A95B0", fontSize: 11, fontWeight: 700, letterSpacing: 2,
+              fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase",
+            }}>⏸ Snapshot — 5 Hours Ago</span>
+          </div>
+          <div style={{
+            transform: "scale(0.52)", transformOrigin: "top left",
+            width: "192%", height: "192%", opacity: 0.6,
+            filter: "saturate(0.5)",
+          }}>
+            <Dashboard simTime={frozenTime.current} overrideData={frozenData} overrideTick={0} frozen />
+          </div>
+        </div>
+
+        {/* Right: accelerated live */}
+        <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+          <div style={{
+            position: "absolute", top: 0, left: 0, zIndex: 10,
+            width: "100%", padding: "6px 0", textAlign: "center",
+            background: "linear-gradient(180deg, rgba(14,17,23,0.95) 0%, rgba(14,17,23,0) 100%)",
+          }}>
+            <span style={{
+              color: T.green, fontSize: 11, fontWeight: 700, letterSpacing: 2,
+              fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase",
+            }}>▶ Live — Accelerated Refresh</span>
+          </div>
+          <div style={{
+            transform: "scale(0.52)", transformOrigin: "top left",
+            width: "192%", height: "192%",
+            opacity: isFlashing ? 0.6 : 1, transition: "opacity 0.3s",
+          }}>
+            <Dashboard simTime={simTime} overrideData={liveData} overrideTick={simTick} frozen />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Route: ?demo → split view, otherwise normal ──────────────────── */
+export default function OperationalDashboard() {
+  const [isDemo, setIsDemo] = useState(false);
+
+  useEffect(() => {
+    setIsDemo(new URLSearchParams(window.location.search).has("demo"));
+
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
+  return isDemo ? <DemoView /> : <Dashboard />;
 }

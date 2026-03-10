@@ -1,0 +1,174 @@
+erDiagram
+    temperature_reading {}
+    delivery_line {}
+    shipment_line {}
+    batch_ingredient_usage {}
+    employee {}
+    goods_receipt {}
+    supplier {}
+    currency {}
+    product {}
+    ingredient {}
+    unit_of_measure {}
+    site {}
+    warehouse {
+        INT warehouse_id "PK"
+        VARCHAR warehouse_name
+        VARCHAR warehouse_code
+        INT site_id "FK"
+        VARCHAR warehouse_type
+        DECIMAL capacity
+        INT capacity_uom "FK"
+        BOOLEAN is_cold_storage
+        DECIMAL temp_min
+        DECIMAL temp_max
+    }
+
+    warehouse_zone {
+        INT zone_id "PK"
+        INT warehouse_id "FK"
+        VARCHAR zone_name
+        VARCHAR zone_type
+        DECIMAL temp_min
+        DECIMAL temp_max
+    }
+
+    storage_location {
+        INT location_id "PK"
+        INT zone_id "FK"
+        VARCHAR location_code
+        VARCHAR aisle
+        VARCHAR rack
+        VARCHAR shelf
+        VARCHAR bin
+        DECIMAL max_weight_kg
+    }
+
+    material_master {
+        INT material_id "PK"
+        VARCHAR material_code
+        VARCHAR material_name
+        VARCHAR material_type
+        INT ingredient_id "FK"
+        INT product_id "FK"
+        INT base_uom_id "FK"
+        DECIMAL standard_cost
+        INT currency_id "FK"
+    }
+
+    inventory_lot {
+        INT lot_id "PK"
+        VARCHAR lot_number
+        INT material_id "FK"
+        INT location_id "FK"
+        INT supplier_id "FK"
+        INT receipt_id "FK"
+        DECIMAL quantity
+        INT uom_id "FK"
+        DATE production_date
+        DATE expiry_date
+        VARCHAR status
+    }
+
+    stock_level {
+        INT stock_level_id "PK"
+        INT material_id "FK"
+        INT site_id "FK"
+        DECIMAL quantity
+        INT uom_id "FK"
+        DECIMAL days_of_cover
+        TIMESTAMP last_updated
+    }
+
+    safety_stock_config {
+        INT config_id "PK"
+        INT material_id "FK"
+        INT site_id "FK"
+        DECIMAL safety_stock_qty
+        INT safety_days
+        INT uom_id "FK"
+        DATE review_date
+    }
+
+    reorder_point_config {
+        INT config_id "PK"
+        INT material_id "FK"
+        INT site_id "FK"
+        DECIMAL reorder_point
+        DECIMAL reorder_qty
+        INT lead_time_days
+        INT uom_id "FK"
+    }
+
+    inventory_transaction {
+        INT transaction_id "PK"
+        INT material_id "FK"
+        INT lot_id "FK"
+        INT site_id "FK"
+        VARCHAR transaction_type
+        DECIMAL quantity
+        INT uom_id "FK"
+        VARCHAR reference_type
+        INT reference_id
+        TIMESTAMP transaction_date
+        INT created_by "FK"
+    }
+
+    cycle_count {
+        INT count_id "PK"
+        INT warehouse_id "FK"
+        DATE count_date
+        INT initiated_by "FK"
+        VARCHAR status
+        DECIMAL variance_value
+    }
+
+    cycle_count_line {
+        INT count_line_id "PK"
+        INT count_id "FK"
+        INT material_id "FK"
+        INT location_id "FK"
+        DECIMAL system_qty
+        DECIMAL counted_qty
+        DECIMAL variance_qty
+        INT counted_by "FK"
+    }
+
+    %% Relationships
+    site ||--o{ warehouse : "site_id"
+    unit_of_measure ||--o{ warehouse : "capacity_uom"
+    warehouse ||--o{ warehouse_zone : "warehouse_id"
+    warehouse_zone ||--o{ storage_location : "zone_id"
+    ingredient ||--o{ material_master : "ingredient_id"
+    product ||--o{ material_master : "product_id"
+    unit_of_measure ||--o{ material_master : "base_uom_id"
+    currency ||--o{ material_master : "currency_id"
+    material_master ||--o{ inventory_lot : "material_id"
+    storage_location ||--o{ inventory_lot : "location_id"
+    supplier ||--o{ inventory_lot : "supplier_id"
+    goods_receipt ||--o{ inventory_lot : "receipt_id"
+    unit_of_measure ||--o{ inventory_lot : "uom_id"
+    material_master ||--o{ stock_level : "material_id"
+    site ||--o{ stock_level : "site_id"
+    unit_of_measure ||--o{ stock_level : "uom_id"
+    material_master ||--o{ safety_stock_config : "material_id"
+    site ||--o{ safety_stock_config : "site_id"
+    unit_of_measure ||--o{ safety_stock_config : "uom_id"
+    material_master ||--o{ reorder_point_config : "material_id"
+    site ||--o{ reorder_point_config : "site_id"
+    unit_of_measure ||--o{ reorder_point_config : "uom_id"
+    material_master ||--o{ inventory_transaction : "material_id"
+    inventory_lot ||--o{ inventory_transaction : "lot_id"
+    site ||--o{ inventory_transaction : "site_id"
+    unit_of_measure ||--o{ inventory_transaction : "uom_id"
+    employee ||--o{ inventory_transaction : "created_by"
+    warehouse ||--o{ cycle_count : "warehouse_id"
+    employee ||--o{ cycle_count : "initiated_by"
+    cycle_count ||--o{ cycle_count_line : "count_id"
+    material_master ||--o{ cycle_count_line : "material_id"
+    storage_location ||--o{ cycle_count_line : "location_id"
+    employee ||--o{ cycle_count_line : "counted_by"
+    inventory_lot ||--o{ batch_ingredient_usage : "lot_id"
+    material_master ||--o{ shipment_line : "material_id"
+    material_master ||--o{ delivery_line : "material_id"
+    warehouse ||--o{ temperature_reading : "warehouse_id"

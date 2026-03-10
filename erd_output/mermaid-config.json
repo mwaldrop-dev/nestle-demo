@@ -1,0 +1,23 @@
+{
+  "er": {
+    "layoutDirection": "LR",
+    "entityPadding": 15,
+    "fontSize": 12,
+    "useMaxWidth": false
+  },
+  "theme": "dark",
+  "themeVariables": {
+    "primaryColor": "#3B9EFF",
+    "primaryTextColor": "#E2EAF4",
+    "primaryBorderColor": "#2A3347",
+    "lineColor": "#5A7A9A",
+    "secondaryColor": "#1C2333",
+    "tertiaryColor": "#161B26",
+    "background": "#0E1117",
+    "mainBkg": "#161B26",
+    "nodeBorder": "#3B9EFF",
+    "clusterBkg": "#1C2333",
+    "titleColor": "#E2EAF4",
+    "edgeLabelBackground": "#161B26"
+  }
+}

@@ -1,0 +1,250 @@
+erDiagram
+    forecast_line {}
+    demand_forecast {}
+    sales_order_line {}
+    sales_order {}
+    customer {}
+    kpi_measurement {}
+    kpi_target {}
+    kpi_definition {}
+    freight_cost {}
+    delivery_line {}
+    shipment_line {}
+    carrier {}
+    recall_event {}
+    product_specification {}
+    quality_parameter {}
+    batch_ingredient_usage {}
+    production_batch {}
+    work_order {}
+    production_schedule {}
+    line_product_capability {}
+    production_line {}
+    factory {}
+    inventory_transaction {}
+    reorder_point_config {}
+    safety_stock_config {}
+    stock_level {}
+    inventory_lot {}
+    material_master {}
+    warehouse {}
+    payment {}
+    invoice {}
+    purchase_order_line {}
+    purchase_order {}
+    purchase_requisition_line {}
+    approved_supplier_list {}
+    supplier_performance {}
+    supplier_certification {}
+    contract_line_item {}
+    supplier_contract {}
+    supplier_material {}
+    supplier {}
+    site {}
+    business_unit {}
+    region {
+        INT region_id "PK"
+        VARCHAR region_name
+        VARCHAR region_code
+        INT parent_region_id "FK"
+        BOOLEAN is_active
+    }
+
+    country {
+        INT country_id "PK"
+        VARCHAR country_name
+        CHAR iso_code_2
+        CHAR iso_code_3
+        INT region_id "FK"
+        VARCHAR currency_code
+    }
+
+    currency {
+        INT currency_id "PK"
+        CHAR currency_code
+        VARCHAR currency_name
+        VARCHAR symbol
+        DECIMAL exchange_rate
+        DATE rate_date
+    }
+
+    unit_of_measure {
+        INT uom_id "PK"
+        VARCHAR uom_code
+        VARCHAR uom_name
+        VARCHAR uom_type
+        DECIMAL base_factor
+    }
+
+    fiscal_period {
+        INT period_id "PK"
+        VARCHAR period_name
+        INT fiscal_year
+        INT quarter
+        DATE start_date
+        DATE end_date
+        BOOLEAN is_closed
+    }
+
+    brand {
+        INT brand_id "PK"
+        VARCHAR brand_name
+        VARCHAR brand_code
+        INT parent_brand_id "FK"
+        VARCHAR market_segment
+    }
+
+    product_category {
+        INT category_id "PK"
+        VARCHAR category_name
+        VARCHAR category_code
+        INT parent_category_id "FK"
+        INT level
+    }
+
+    product {
+        INT product_id "PK"
+        VARCHAR product_name
+        VARCHAR sku
+        INT brand_id "FK"
+        INT category_id "FK"
+        INT base_uom_id "FK"
+        INT shelf_life_days
+        BOOLEAN is_cold_chain
+        DECIMAL min_temp_celsius
+        DECIMAL max_temp_celsius
+        VARCHAR status
+    }
+
+    product_variant {
+        INT variant_id "PK"
+        INT product_id "FK"
+        VARCHAR variant_name
+        VARCHAR variant_sku
+        DECIMAL net_weight
+        DECIMAL gross_weight
+        INT weight_uom_id "FK"
+        VARCHAR barcode
+    }
+
+    ingredient {
+        INT ingredient_id "PK"
+        VARCHAR ingredient_name
+        VARCHAR ingredient_code
+        VARCHAR category
+        BOOLEAN is_allergen
+        VARCHAR allergen_type
+        INT country_of_origin "FK"
+        BOOLEAN is_organic
+        INT shelf_life_days
+    }
+
+    product_ingredient {
+        INT product_ingredient_id "PK"
+        INT product_id "FK"
+        INT ingredient_id "FK"
+        DECIMAL percentage
+        BOOLEAN is_primary
+        INT sequence_order
+    }
+
+    packaging_type {
+        INT packaging_type_id "PK"
+        VARCHAR type_name
+        VARCHAR material
+        BOOLEAN is_recyclable
+        DECIMAL weight_grams
+    }
+
+    regulatory_standard {
+        INT standard_id "PK"
+        VARCHAR standard_name
+        VARCHAR standard_code
+        VARCHAR issuing_body
+        INT country_id "FK"
+        VARCHAR category
+    }
+
+    certification_type {
+        INT cert_type_id "PK"
+        VARCHAR cert_name
+        VARCHAR cert_code
+        VARCHAR issuing_body
+        INT validity_months
+        INT standard_id "FK"
+    }
+
+    %% Relationships
+    region ||--o{ region : "parent_region_id"
+    region ||--o{ country : "region_id"
+    brand ||--o{ brand : "parent_brand_id"
+    product_category ||--o{ product_category : "parent_category_id"
+    brand ||--o{ product : "brand_id"
+    product_category ||--o{ product : "category_id"
+    unit_of_measure ||--o{ product : "base_uom_id"
+    product ||--o{ product_variant : "product_id"
+    unit_of_measure ||--o{ product_variant : "weight_uom_id"
+    country ||--o{ ingredient : "country_of_origin"
+    product ||--o{ product_ingredient : "product_id"
+    ingredient ||--o{ product_ingredient : "ingredient_id"
+    country ||--o{ regulatory_standard : "country_id"
+    regulatory_standard ||--o{ certification_type : "standard_id"
+    region ||--o{ business_unit : "region_id"
+    country ||--o{ site : "country_id"
+    country ||--o{ supplier : "country_id"
+    ingredient ||--o{ supplier_material : "ingredient_id"
+    currency ||--o{ supplier_material : "currency_id"
+    currency ||--o{ supplier_contract : "currency_id"
+    ingredient ||--o{ contract_line_item : "ingredient_id"
+    unit_of_measure ||--o{ contract_line_item : "uom_id"
+    certification_type ||--o{ supplier_certification : "cert_type_id"
+    fiscal_period ||--o{ supplier_performance : "period_id"
+    ingredient ||--o{ approved_supplier_list : "ingredient_id"
+    ingredient ||--o{ purchase_requisition_line : "ingredient_id"
+    unit_of_measure ||--o{ purchase_requisition_line : "uom_id"
+    currency ||--o{ purchase_order : "currency_id"
+    ingredient ||--o{ purchase_order_line : "ingredient_id"
+    unit_of_measure ||--o{ purchase_order_line : "uom_id"
+    currency ||--o{ invoice : "currency_id"
+    currency ||--o{ payment : "currency_id"
+    unit_of_measure ||--o{ warehouse : "capacity_uom"
+    ingredient ||--o{ material_master : "ingredient_id"
+    product ||--o{ material_master : "product_id"
+    unit_of_measure ||--o{ material_master : "base_uom_id"
+    currency ||--o{ material_master : "currency_id"
+    unit_of_measure ||--o{ inventory_lot : "uom_id"
+    unit_of_measure ||--o{ stock_level : "uom_id"
+    unit_of_measure ||--o{ safety_stock_config : "uom_id"
+    unit_of_measure ||--o{ reorder_point_config : "uom_id"
+    unit_of_measure ||--o{ inventory_transaction : "uom_id"
+    unit_of_measure ||--o{ factory : "capacity_uom_id"
+    unit_of_measure ||--o{ production_line : "throughput_uom"
+    product ||--o{ line_product_capability : "product_id"
+    product ||--o{ production_schedule : "product_id"
+    unit_of_measure ||--o{ production_schedule : "uom_id"
+    product ||--o{ work_order : "product_id"
+    unit_of_measure ||--o{ work_order : "uom_id"
+    product ||--o{ production_batch : "product_id"
+    unit_of_measure ||--o{ production_batch : "uom_id"
+    ingredient ||--o{ batch_ingredient_usage : "ingredient_id"
+    unit_of_measure ||--o{ batch_ingredient_usage : "uom_id"
+    unit_of_measure ||--o{ quality_parameter : "uom_id"
+    product ||--o{ product_specification : "product_id"
+    product ||--o{ recall_event : "product_id"
+    country ||--o{ carrier : "country_id"
+    unit_of_measure ||--o{ shipment_line : "uom_id"
+    unit_of_measure ||--o{ delivery_line : "uom_id"
+    currency ||--o{ freight_cost : "currency_id"
+    unit_of_measure ||--o{ kpi_definition : "uom_id"
+    fiscal_period ||--o{ kpi_target : "period_id"
+    fiscal_period ||--o{ kpi_measurement : "period_id"
+    country ||--o{ customer : "country_id"
+    region ||--o{ customer : "region_id"
+    currency ||--o{ sales_order : "currency_id"
+    product ||--o{ sales_order_line : "product_id"
+    product_variant ||--o{ sales_order_line : "variant_id"
+    unit_of_measure ||--o{ sales_order_line : "uom_id"
+    fiscal_period ||--o{ demand_forecast : "period_id"
+    product ||--o{ forecast_line : "product_id"
+    region ||--o{ forecast_line : "region_id"
+    unit_of_measure ||--o{ forecast_line : "uom_id"

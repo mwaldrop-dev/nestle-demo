@@ -1,0 +1,798 @@
+dbms,TABLE_SCHEMA,TABLE_NAME,COLUMN_NAME,ORDINAL_POSITION,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH,IS_NULLABLE,CONSTRAINT_TYPE,REFERENCED_TABLE_SCHEMA,REFERENCED_TABLE_NAME,REFERENCED_COLUMN_NAME
+postgresql,public,region,region_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,region,region_name,2,character varying,100,NO,,,,
+postgresql,public,region,region_code,3,character varying,10,NO,,,,
+postgresql,public,region,parent_region_id,4,integer,,YES,FOREIGN KEY,public,region,region_id
+postgresql,public,region,is_active,5,boolean,,YES,,,,
+postgresql,public,country,country_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,country,country_name,2,character varying,100,NO,,,,
+postgresql,public,country,iso_code_2,3,char,2,NO,,,,
+postgresql,public,country,iso_code_3,4,char,3,NO,,,,
+postgresql,public,country,region_id,5,integer,,NO,FOREIGN KEY,public,region,region_id
+postgresql,public,country,currency_code,6,character varying,3,NO,,,,
+postgresql,public,currency,currency_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,currency,currency_code,2,char,3,NO,,,,
+postgresql,public,currency,currency_name,3,character varying,50,NO,,,,
+postgresql,public,currency,symbol,4,character varying,5,YES,,,,
+postgresql,public,currency,exchange_rate,5,numeric,,YES,,,,
+postgresql,public,currency,rate_date,6,date,,YES,,,,
+postgresql,public,unit_of_measure,uom_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,unit_of_measure,uom_code,2,character varying,10,NO,,,,
+postgresql,public,unit_of_measure,uom_name,3,character varying,50,NO,,,,
+postgresql,public,unit_of_measure,uom_type,4,character varying,20,NO,,,,
+postgresql,public,unit_of_measure,base_factor,5,numeric,,YES,,,,
+postgresql,public,fiscal_period,period_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,fiscal_period,period_name,2,character varying,20,NO,,,,
+postgresql,public,fiscal_period,fiscal_year,3,integer,,NO,,,,
+postgresql,public,fiscal_period,quarter,4,integer,,NO,,,,
+postgresql,public,fiscal_period,start_date,5,date,,NO,,,,
+postgresql,public,fiscal_period,end_date,6,date,,NO,,,,
+postgresql,public,fiscal_period,is_closed,7,boolean,,YES,,,,
+postgresql,public,brand,brand_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,brand,brand_name,2,character varying,100,NO,,,,
+postgresql,public,brand,brand_code,3,character varying,20,NO,,,,
+postgresql,public,brand,parent_brand_id,4,integer,,YES,FOREIGN KEY,public,brand,brand_id
+postgresql,public,brand,market_segment,5,character varying,50,YES,,,,
+postgresql,public,product_category,category_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,product_category,category_name,2,character varying,100,NO,,,,
+postgresql,public,product_category,category_code,3,character varying,20,NO,,,,
+postgresql,public,product_category,parent_category_id,4,integer,,YES,FOREIGN KEY,public,product_category,category_id
+postgresql,public,product_category,level,5,integer,,NO,,,,
+postgresql,public,product,product_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,product,product_name,2,character varying,200,NO,,,,
+postgresql,public,product,sku,3,character varying,50,NO,,,,
+postgresql,public,product,brand_id,4,integer,,NO,FOREIGN KEY,public,brand,brand_id
+postgresql,public,product,category_id,5,integer,,NO,FOREIGN KEY,public,product_category,category_id
+postgresql,public,product,base_uom_id,6,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,product,shelf_life_days,7,integer,,YES,,,,
+postgresql,public,product,is_cold_chain,8,boolean,,YES,,,,
+postgresql,public,product,min_temp_celsius,9,numeric,,YES,,,,
+postgresql,public,product,max_temp_celsius,10,numeric,,YES,,,,
+postgresql,public,product,status,11,character varying,20,YES,,,,
+postgresql,public,product_variant,variant_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,product_variant,product_id,2,integer,,NO,FOREIGN KEY,public,product,product_id
+postgresql,public,product_variant,variant_name,3,character varying,100,NO,,,,
+postgresql,public,product_variant,variant_sku,4,character varying,50,NO,,,,
+postgresql,public,product_variant,net_weight,5,numeric,,YES,,,,
+postgresql,public,product_variant,gross_weight,6,numeric,,YES,,,,
+postgresql,public,product_variant,weight_uom_id,7,integer,,YES,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,product_variant,barcode,8,character varying,50,YES,,,,
+postgresql,public,ingredient,ingredient_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,ingredient,ingredient_name,2,character varying,100,NO,,,,
+postgresql,public,ingredient,ingredient_code,3,character varying,20,NO,,,,
+postgresql,public,ingredient,category,4,character varying,50,YES,,,,
+postgresql,public,ingredient,is_allergen,5,boolean,,YES,,,,
+postgresql,public,ingredient,allergen_type,6,character varying,50,YES,,,,
+postgresql,public,ingredient,country_of_origin,7,integer,,YES,FOREIGN KEY,public,country,country_id
+postgresql,public,ingredient,is_organic,8,boolean,,YES,,,,
+postgresql,public,ingredient,shelf_life_days,9,integer,,YES,,,,
+postgresql,public,product_ingredient,product_ingredient_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,product_ingredient,product_id,2,integer,,NO,FOREIGN KEY,public,product,product_id
+postgresql,public,product_ingredient,ingredient_id,3,integer,,NO,FOREIGN KEY,public,ingredient,ingredient_id
+postgresql,public,product_ingredient,percentage,4,numeric,,YES,,,,
+postgresql,public,product_ingredient,is_primary,5,boolean,,YES,,,,
+postgresql,public,product_ingredient,sequence_order,6,integer,,YES,,,,
+postgresql,public,packaging_type,packaging_type_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,packaging_type,type_name,2,character varying,50,NO,,,,
+postgresql,public,packaging_type,material,3,character varying,50,YES,,,,
+postgresql,public,packaging_type,is_recyclable,4,boolean,,YES,,,,
+postgresql,public,packaging_type,weight_grams,5,numeric,,YES,,,,
+postgresql,public,regulatory_standard,standard_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,regulatory_standard,standard_name,2,character varying,100,NO,,,,
+postgresql,public,regulatory_standard,standard_code,3,character varying,20,NO,,,,
+postgresql,public,regulatory_standard,issuing_body,4,character varying,100,YES,,,,
+postgresql,public,regulatory_standard,country_id,5,integer,,YES,FOREIGN KEY,public,country,country_id
+postgresql,public,regulatory_standard,category,6,character varying,50,YES,,,,
+postgresql,public,certification_type,cert_type_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,certification_type,cert_name,2,character varying,100,NO,,,,
+postgresql,public,certification_type,cert_code,3,character varying,20,NO,,,,
+postgresql,public,certification_type,issuing_body,4,character varying,100,YES,,,,
+postgresql,public,certification_type,validity_months,5,integer,,YES,,,,
+postgresql,public,certification_type,standard_id,6,integer,,YES,FOREIGN KEY,public,regulatory_standard,standard_id
+postgresql,public,business_unit,bu_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,business_unit,bu_name,2,character varying,100,NO,,,,
+postgresql,public,business_unit,bu_code,3,character varying,20,NO,,,,
+postgresql,public,business_unit,region_id,4,integer,,YES,FOREIGN KEY,public,region,region_id
+postgresql,public,business_unit,parent_bu_id,5,integer,,YES,FOREIGN KEY,public,business_unit,bu_id
+postgresql,public,site,site_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,site,site_name,2,character varying,100,NO,,,,
+postgresql,public,site,site_code,3,character varying,20,NO,,,,
+postgresql,public,site,site_type,4,character varying,30,NO,,,,
+postgresql,public,site,bu_id,5,integer,,NO,FOREIGN KEY,public,business_unit,bu_id
+postgresql,public,site,country_id,6,integer,,NO,FOREIGN KEY,public,country,country_id
+postgresql,public,site,city,7,character varying,100,YES,,,,
+postgresql,public,site,address,8,character varying,200,YES,,,,
+postgresql,public,site,latitude,9,numeric,,YES,,,,
+postgresql,public,site,longitude,10,numeric,,YES,,,,
+postgresql,public,site,is_active,11,boolean,,YES,,,,
+postgresql,public,department,department_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,department,department_name,2,character varying,100,NO,,,,
+postgresql,public,department,department_code,3,character varying,20,NO,,,,
+postgresql,public,department,site_id,4,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,department,parent_dept_id,5,integer,,YES,FOREIGN KEY,public,department,department_id
+postgresql,public,role,role_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,role,role_name,2,character varying,100,NO,,,,
+postgresql,public,role,role_code,3,character varying,20,NO,,,,
+postgresql,public,role,role_level,4,character varying,20,YES,,,,
+postgresql,public,employee,employee_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,employee,employee_code,2,character varying,20,NO,,,,
+postgresql,public,employee,first_name,3,character varying,50,NO,,,,
+postgresql,public,employee,last_name,4,character varying,50,NO,,,,
+postgresql,public,employee,email,5,character varying,100,YES,,,,
+postgresql,public,employee,department_id,6,integer,,NO,FOREIGN KEY,public,department,department_id
+postgresql,public,employee,role_id,7,integer,,NO,FOREIGN KEY,public,role,role_id
+postgresql,public,employee,manager_id,8,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,employee,hire_date,9,date,,NO,,,,
+postgresql,public,employee,is_active,10,boolean,,YES,,,,
+postgresql,public,team,team_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,team,team_name,2,character varying,100,NO,,,,
+postgresql,public,team,team_type,3,character varying,30,YES,,,,
+postgresql,public,team,lead_id,4,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,team,site_id,5,integer,,YES,FOREIGN KEY,public,site,site_id
+postgresql,public,team_member,team_member_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,team_member,team_id,2,integer,,NO,FOREIGN KEY,public,team,team_id
+postgresql,public,team_member,employee_id,3,integer,,NO,FOREIGN KEY,public,employee,employee_id
+postgresql,public,team_member,role_in_team,4,character varying,50,YES,,,,
+postgresql,public,team_member,joined_date,5,date,,NO,,,,
+postgresql,public,supplier_tier,tier_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,supplier_tier,tier_name,2,character varying,20,NO,,,,
+postgresql,public,supplier_tier,tier_level,3,integer,,NO,,,,
+postgresql,public,supplier_tier,description,4,character varying,200,YES,,,,
+postgresql,public,supplier,supplier_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,supplier,supplier_name,2,character varying,200,NO,,,,
+postgresql,public,supplier,supplier_code,3,character varying,20,NO,,,,
+postgresql,public,supplier,tier_id,4,integer,,NO,FOREIGN KEY,public,supplier_tier,tier_id
+postgresql,public,supplier,country_id,5,integer,,NO,FOREIGN KEY,public,country,country_id
+postgresql,public,supplier,city,6,character varying,100,YES,,,,
+postgresql,public,supplier,primary_contact,7,character varying,100,YES,,,,
+postgresql,public,supplier,email,8,character varying,100,YES,,,,
+postgresql,public,supplier,phone,9,character varying,30,YES,,,,
+postgresql,public,supplier,onboarded_date,10,date,,YES,,,,
+postgresql,public,supplier,status,11,character varying,20,YES,,,,
+postgresql,public,supplier,risk_score,12,numeric,,YES,,,,
+postgresql,public,supplier,strategic_flag,13,boolean,,YES,,,,
+postgresql,public,supplier_contact,contact_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,supplier_contact,supplier_id,2,integer,,NO,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,supplier_contact,contact_name,3,character varying,100,NO,,,,
+postgresql,public,supplier_contact,title,4,character varying,100,YES,,,,
+postgresql,public,supplier_contact,email,5,character varying,100,YES,,,,
+postgresql,public,supplier_contact,phone,6,character varying,30,YES,,,,
+postgresql,public,supplier_contact,is_primary,7,boolean,,YES,,,,
+postgresql,public,supplier_material,supplier_material_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,supplier_material,supplier_id,2,integer,,NO,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,supplier_material,ingredient_id,3,integer,,NO,FOREIGN KEY,public,ingredient,ingredient_id
+postgresql,public,supplier_material,lead_time_days,4,integer,,YES,,,,
+postgresql,public,supplier_material,min_order_qty,5,numeric,,YES,,,,
+postgresql,public,supplier_material,unit_price,6,numeric,,YES,,,,
+postgresql,public,supplier_material,currency_id,7,integer,,YES,FOREIGN KEY,public,currency,currency_id
+postgresql,public,supplier_material,is_preferred,8,boolean,,YES,,,,
+postgresql,public,supplier_contract,contract_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,supplier_contract,supplier_id,2,integer,,NO,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,supplier_contract,contract_ref,3,character varying,50,NO,,,,
+postgresql,public,supplier_contract,start_date,4,date,,NO,,,,
+postgresql,public,supplier_contract,end_date,5,date,,NO,,,,
+postgresql,public,supplier_contract,total_value,6,numeric,,YES,,,,
+postgresql,public,supplier_contract,currency_id,7,integer,,YES,FOREIGN KEY,public,currency,currency_id
+postgresql,public,supplier_contract,payment_terms,8,character varying,50,YES,,,,
+postgresql,public,supplier_contract,incoterm,9,character varying,10,YES,,,,
+postgresql,public,supplier_contract,status,10,character varying,20,YES,,,,
+postgresql,public,contract_line_item,line_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,contract_line_item,contract_id,2,integer,,NO,FOREIGN KEY,public,supplier_contract,contract_id
+postgresql,public,contract_line_item,ingredient_id,3,integer,,NO,FOREIGN KEY,public,ingredient,ingredient_id
+postgresql,public,contract_line_item,agreed_qty,4,numeric,,YES,,,,
+postgresql,public,contract_line_item,unit_price,5,numeric,,YES,,,,
+postgresql,public,contract_line_item,uom_id,6,integer,,YES,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,contract_line_item,delivery_schedule,7,character varying,50,YES,,,,
+postgresql,public,supplier_certification,supplier_cert_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,supplier_certification,supplier_id,2,integer,,NO,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,supplier_certification,cert_type_id,3,integer,,NO,FOREIGN KEY,public,certification_type,cert_type_id
+postgresql,public,supplier_certification,cert_number,4,character varying,50,YES,,,,
+postgresql,public,supplier_certification,issued_date,5,date,,NO,,,,
+postgresql,public,supplier_certification,expiry_date,6,date,,NO,,,,
+postgresql,public,supplier_certification,status,7,character varying,20,YES,,,,
+postgresql,public,supplier_audit,audit_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,supplier_audit,supplier_id,2,integer,,NO,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,supplier_audit,audit_date,3,date,,NO,,,,
+postgresql,public,supplier_audit,auditor_id,4,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,supplier_audit,audit_type,5,character varying,50,YES,,,,
+postgresql,public,supplier_audit,overall_score,6,numeric,,YES,,,,
+postgresql,public,supplier_audit,findings_count,7,integer,,YES,,,,
+postgresql,public,supplier_audit,status,8,character varying,20,YES,,,,
+postgresql,public,supplier_audit,next_audit_date,9,date,,YES,,,,
+postgresql,public,supplier_risk_assessment,assessment_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,supplier_risk_assessment,supplier_id,2,integer,,NO,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,supplier_risk_assessment,assessment_date,3,date,,NO,,,,
+postgresql,public,supplier_risk_assessment,assessor_id,4,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,supplier_risk_assessment,financial_risk,5,numeric,,YES,,,,
+postgresql,public,supplier_risk_assessment,operational_risk,6,numeric,,YES,,,,
+postgresql,public,supplier_risk_assessment,geopolitical_risk,7,numeric,,YES,,,,
+postgresql,public,supplier_risk_assessment,quality_risk,8,numeric,,YES,,,,
+postgresql,public,supplier_risk_assessment,overall_risk,9,numeric,,YES,,,,
+postgresql,public,supplier_risk_assessment,risk_category,10,character varying,20,YES,,,,
+postgresql,public,supplier_performance,performance_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,supplier_performance,supplier_id,2,integer,,NO,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,supplier_performance,period_id,3,integer,,NO,FOREIGN KEY,public,fiscal_period,period_id
+postgresql,public,supplier_performance,otd_percentage,4,numeric,,YES,,,,
+postgresql,public,supplier_performance,quality_score,5,numeric,,YES,,,,
+postgresql,public,supplier_performance,responsiveness,6,numeric,,YES,,,,
+postgresql,public,supplier_performance,cost_competitiveness,7,numeric,,YES,,,,
+postgresql,public,supplier_performance,overall_rating,8,numeric,,YES,,,,
+postgresql,public,supplier_performance,total_shipments,9,integer,,YES,,,,
+postgresql,public,supplier_performance,on_time_shipments,10,integer,,YES,,,,
+postgresql,public,supplier_performance,rejected_shipments,11,integer,,YES,,,,
+postgresql,public,approved_supplier_list,asl_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,approved_supplier_list,supplier_id,2,integer,,NO,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,approved_supplier_list,ingredient_id,3,integer,,NO,FOREIGN KEY,public,ingredient,ingredient_id
+postgresql,public,approved_supplier_list,site_id,4,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,approved_supplier_list,approved_date,5,date,,NO,,,,
+postgresql,public,approved_supplier_list,approved_by,6,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,approved_supplier_list,status,7,character varying,20,YES,,,,
+postgresql,public,purchase_requisition,requisition_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,purchase_requisition,requisition_no,2,character varying,20,NO,,,,
+postgresql,public,purchase_requisition,requester_id,3,integer,,NO,FOREIGN KEY,public,employee,employee_id
+postgresql,public,purchase_requisition,site_id,4,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,purchase_requisition,created_date,5,timestamp,,NO,,,,
+postgresql,public,purchase_requisition,required_date,6,date,,YES,,,,
+postgresql,public,purchase_requisition,priority,7,character varying,10,YES,,,,
+postgresql,public,purchase_requisition,status,8,character varying,20,YES,,,,
+postgresql,public,purchase_requisition_line,req_line_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,purchase_requisition_line,requisition_id,2,integer,,NO,FOREIGN KEY,public,purchase_requisition,requisition_id
+postgresql,public,purchase_requisition_line,ingredient_id,3,integer,,NO,FOREIGN KEY,public,ingredient,ingredient_id
+postgresql,public,purchase_requisition_line,quantity,4,numeric,,NO,,,,
+postgresql,public,purchase_requisition_line,uom_id,5,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,purchase_requisition_line,estimated_cost,6,numeric,,YES,,,,
+postgresql,public,purchase_requisition_line,line_number,7,integer,,NO,,,,
+postgresql,public,purchase_order,po_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,purchase_order,po_number,2,character varying,20,NO,,,,
+postgresql,public,purchase_order,supplier_id,3,integer,,NO,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,purchase_order,contract_id,4,integer,,YES,FOREIGN KEY,public,supplier_contract,contract_id
+postgresql,public,purchase_order,site_id,5,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,purchase_order,buyer_id,6,integer,,NO,FOREIGN KEY,public,employee,employee_id
+postgresql,public,purchase_order,order_date,7,timestamp,,NO,,,,
+postgresql,public,purchase_order,expected_delivery,8,date,,YES,,,,
+postgresql,public,purchase_order,total_amount,9,numeric,,YES,,,,
+postgresql,public,purchase_order,currency_id,10,integer,,YES,FOREIGN KEY,public,currency,currency_id
+postgresql,public,purchase_order,incoterm,11,character varying,10,YES,,,,
+postgresql,public,purchase_order,status,12,character varying,20,YES,,,,
+postgresql,public,purchase_order_line,po_line_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,purchase_order_line,po_id,2,integer,,NO,FOREIGN KEY,public,purchase_order,po_id
+postgresql,public,purchase_order_line,ingredient_id,3,integer,,NO,FOREIGN KEY,public,ingredient,ingredient_id
+postgresql,public,purchase_order_line,quantity,4,numeric,,NO,,,,
+postgresql,public,purchase_order_line,uom_id,5,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,purchase_order_line,unit_price,6,numeric,,NO,,,,
+postgresql,public,purchase_order_line,line_total,7,numeric,,YES,,,,
+postgresql,public,purchase_order_line,line_number,8,integer,,NO,,,,
+postgresql,public,goods_receipt,receipt_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,goods_receipt,receipt_number,2,character varying,20,NO,,,,
+postgresql,public,goods_receipt,po_id,3,integer,,NO,FOREIGN KEY,public,purchase_order,po_id
+postgresql,public,goods_receipt,site_id,4,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,goods_receipt,received_by,5,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,goods_receipt,receipt_date,6,timestamp,,NO,,,,
+postgresql,public,goods_receipt,status,7,character varying,20,YES,,,,
+postgresql,public,goods_receipt_line,receipt_line_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,goods_receipt_line,receipt_id,2,integer,,NO,FOREIGN KEY,public,goods_receipt,receipt_id
+postgresql,public,goods_receipt_line,po_line_id,3,integer,,NO,FOREIGN KEY,public,purchase_order_line,po_line_id
+postgresql,public,goods_receipt_line,received_qty,4,numeric,,NO,,,,
+postgresql,public,goods_receipt_line,accepted_qty,5,numeric,,YES,,,,
+postgresql,public,goods_receipt_line,rejected_qty,6,numeric,,YES,,,,
+postgresql,public,goods_receipt_line,lot_number,7,character varying,50,YES,,,,
+postgresql,public,goods_receipt_line,expiry_date,8,date,,YES,,,,
+postgresql,public,invoice,invoice_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,invoice,invoice_number,2,character varying,50,NO,,,,
+postgresql,public,invoice,supplier_id,3,integer,,NO,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,invoice,po_id,4,integer,,YES,FOREIGN KEY,public,purchase_order,po_id
+postgresql,public,invoice,invoice_date,5,date,,NO,,,,
+postgresql,public,invoice,due_date,6,date,,NO,,,,
+postgresql,public,invoice,total_amount,7,numeric,,NO,,,,
+postgresql,public,invoice,currency_id,8,integer,,YES,FOREIGN KEY,public,currency,currency_id
+postgresql,public,invoice,status,9,character varying,20,YES,,,,
+postgresql,public,invoice_line,invoice_line_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,invoice_line,invoice_id,2,integer,,NO,FOREIGN KEY,public,invoice,invoice_id
+postgresql,public,invoice_line,po_line_id,3,integer,,YES,FOREIGN KEY,public,purchase_order_line,po_line_id
+postgresql,public,invoice_line,description,4,character varying,200,YES,,,,
+postgresql,public,invoice_line,quantity,5,numeric,,YES,,,,
+postgresql,public,invoice_line,unit_price,6,numeric,,YES,,,,
+postgresql,public,invoice_line,line_total,7,numeric,,YES,,,,
+postgresql,public,payment,payment_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,payment,invoice_id,2,integer,,NO,FOREIGN KEY,public,invoice,invoice_id
+postgresql,public,payment,payment_date,3,date,,NO,,,,
+postgresql,public,payment,amount,4,numeric,,NO,,,,
+postgresql,public,payment,currency_id,5,integer,,YES,FOREIGN KEY,public,currency,currency_id
+postgresql,public,payment,payment_method,6,character varying,30,YES,,,,
+postgresql,public,payment,reference,7,character varying,50,YES,,,,
+postgresql,public,payment,status,8,character varying,20,YES,,,,
+postgresql,public,warehouse,warehouse_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,warehouse,warehouse_name,2,character varying,100,NO,,,,
+postgresql,public,warehouse,warehouse_code,3,character varying,20,NO,,,,
+postgresql,public,warehouse,site_id,4,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,warehouse,warehouse_type,5,character varying,30,YES,,,,
+postgresql,public,warehouse,capacity,6,numeric,,YES,,,,
+postgresql,public,warehouse,capacity_uom,7,integer,,YES,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,warehouse,is_cold_storage,8,boolean,,YES,,,,
+postgresql,public,warehouse,temp_min,9,numeric,,YES,,,,
+postgresql,public,warehouse,temp_max,10,numeric,,YES,,,,
+postgresql,public,warehouse_zone,zone_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,warehouse_zone,warehouse_id,2,integer,,NO,FOREIGN KEY,public,warehouse,warehouse_id
+postgresql,public,warehouse_zone,zone_name,3,character varying,50,NO,,,,
+postgresql,public,warehouse_zone,zone_type,4,character varying,30,YES,,,,
+postgresql,public,warehouse_zone,temp_min,5,numeric,,YES,,,,
+postgresql,public,warehouse_zone,temp_max,6,numeric,,YES,,,,
+postgresql,public,storage_location,location_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,storage_location,zone_id,2,integer,,NO,FOREIGN KEY,public,warehouse_zone,zone_id
+postgresql,public,storage_location,location_code,3,character varying,20,NO,,,,
+postgresql,public,storage_location,aisle,4,character varying,10,YES,,,,
+postgresql,public,storage_location,rack,5,character varying,10,YES,,,,
+postgresql,public,storage_location,shelf,6,character varying,10,YES,,,,
+postgresql,public,storage_location,bin,7,character varying,10,YES,,,,
+postgresql,public,storage_location,max_weight_kg,8,numeric,,YES,,,,
+postgresql,public,material_master,material_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,material_master,material_code,2,character varying,20,NO,,,,
+postgresql,public,material_master,material_name,3,character varying,200,NO,,,,
+postgresql,public,material_master,material_type,4,character varying,30,YES,,,,
+postgresql,public,material_master,ingredient_id,5,integer,,YES,FOREIGN KEY,public,ingredient,ingredient_id
+postgresql,public,material_master,product_id,6,integer,,YES,FOREIGN KEY,public,product,product_id
+postgresql,public,material_master,base_uom_id,7,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,material_master,standard_cost,8,numeric,,YES,,,,
+postgresql,public,material_master,currency_id,9,integer,,YES,FOREIGN KEY,public,currency,currency_id
+postgresql,public,inventory_lot,lot_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,inventory_lot,lot_number,2,character varying,50,NO,,,,
+postgresql,public,inventory_lot,material_id,3,integer,,NO,FOREIGN KEY,public,material_master,material_id
+postgresql,public,inventory_lot,location_id,4,integer,,NO,FOREIGN KEY,public,storage_location,location_id
+postgresql,public,inventory_lot,supplier_id,5,integer,,YES,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,inventory_lot,receipt_id,6,integer,,YES,FOREIGN KEY,public,goods_receipt,receipt_id
+postgresql,public,inventory_lot,quantity,7,numeric,,NO,,,,
+postgresql,public,inventory_lot,uom_id,8,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,inventory_lot,production_date,9,date,,YES,,,,
+postgresql,public,inventory_lot,expiry_date,10,date,,YES,,,,
+postgresql,public,inventory_lot,status,11,character varying,20,YES,,,,
+postgresql,public,stock_level,stock_level_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,stock_level,material_id,2,integer,,NO,FOREIGN KEY,public,material_master,material_id
+postgresql,public,stock_level,site_id,3,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,stock_level,quantity,4,numeric,,NO,,,,
+postgresql,public,stock_level,uom_id,5,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,stock_level,days_of_cover,6,numeric,,YES,,,,
+postgresql,public,stock_level,last_updated,7,timestamp,,NO,,,,
+postgresql,public,safety_stock_config,config_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,safety_stock_config,material_id,2,integer,,NO,FOREIGN KEY,public,material_master,material_id
+postgresql,public,safety_stock_config,site_id,3,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,safety_stock_config,safety_stock_qty,4,numeric,,NO,,,,
+postgresql,public,safety_stock_config,safety_days,5,integer,,NO,,,,
+postgresql,public,safety_stock_config,uom_id,6,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,safety_stock_config,review_date,7,date,,YES,,,,
+postgresql,public,reorder_point_config,config_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,reorder_point_config,material_id,2,integer,,NO,FOREIGN KEY,public,material_master,material_id
+postgresql,public,reorder_point_config,site_id,3,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,reorder_point_config,reorder_point,4,numeric,,NO,,,,
+postgresql,public,reorder_point_config,reorder_qty,5,numeric,,NO,,,,
+postgresql,public,reorder_point_config,lead_time_days,6,integer,,NO,,,,
+postgresql,public,reorder_point_config,uom_id,7,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,inventory_transaction,transaction_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,inventory_transaction,material_id,2,integer,,NO,FOREIGN KEY,public,material_master,material_id
+postgresql,public,inventory_transaction,lot_id,3,integer,,YES,FOREIGN KEY,public,inventory_lot,lot_id
+postgresql,public,inventory_transaction,site_id,4,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,inventory_transaction,transaction_type,5,character varying,30,NO,,,,
+postgresql,public,inventory_transaction,quantity,6,numeric,,NO,,,,
+postgresql,public,inventory_transaction,uom_id,7,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,inventory_transaction,reference_type,8,character varying,30,YES,,,,
+postgresql,public,inventory_transaction,reference_id,9,integer,,YES,,,,
+postgresql,public,inventory_transaction,transaction_date,10,timestamp,,NO,,,,
+postgresql,public,inventory_transaction,created_by,11,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,cycle_count,count_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,cycle_count,warehouse_id,2,integer,,NO,FOREIGN KEY,public,warehouse,warehouse_id
+postgresql,public,cycle_count,count_date,3,date,,NO,,,,
+postgresql,public,cycle_count,initiated_by,4,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,cycle_count,status,5,character varying,20,YES,,,,
+postgresql,public,cycle_count,variance_value,6,numeric,,YES,,,,
+postgresql,public,cycle_count_line,count_line_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,cycle_count_line,count_id,2,integer,,NO,FOREIGN KEY,public,cycle_count,count_id
+postgresql,public,cycle_count_line,material_id,3,integer,,NO,FOREIGN KEY,public,material_master,material_id
+postgresql,public,cycle_count_line,location_id,4,integer,,NO,FOREIGN KEY,public,storage_location,location_id
+postgresql,public,cycle_count_line,system_qty,5,numeric,,NO,,,,
+postgresql,public,cycle_count_line,counted_qty,6,numeric,,YES,,,,
+postgresql,public,cycle_count_line,variance_qty,7,numeric,,YES,,,,
+postgresql,public,cycle_count_line,counted_by,8,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,factory,factory_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,factory,site_id,2,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,factory,factory_code,3,character varying,20,NO,,,,
+postgresql,public,factory,total_lines,4,integer,,NO,,,,
+postgresql,public,factory,max_capacity,5,numeric,,YES,,,,
+postgresql,public,factory,capacity_uom_id,6,integer,,YES,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,factory,operating_hours,7,numeric,,YES,,,,
+postgresql,public,production_line,line_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,production_line,factory_id,2,integer,,NO,FOREIGN KEY,public,factory,factory_id
+postgresql,public,production_line,line_name,3,character varying,50,NO,,,,
+postgresql,public,production_line,line_code,4,character varying,20,NO,,,,
+postgresql,public,production_line,line_type,5,character varying,30,YES,,,,
+postgresql,public,production_line,max_throughput,6,numeric,,YES,,,,
+postgresql,public,production_line,throughput_uom,7,integer,,YES,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,production_line,status,8,character varying,20,YES,,,,
+postgresql,public,line_product_capability,capability_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,line_product_capability,line_id,2,integer,,NO,FOREIGN KEY,public,production_line,line_id
+postgresql,public,line_product_capability,product_id,3,integer,,NO,FOREIGN KEY,public,product,product_id
+postgresql,public,line_product_capability,changeover_minutes,4,integer,,YES,,,,
+postgresql,public,line_product_capability,std_throughput,5,numeric,,YES,,,,
+postgresql,public,production_shift,shift_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,production_shift,factory_id,2,integer,,NO,FOREIGN KEY,public,factory,factory_id
+postgresql,public,production_shift,shift_name,3,character varying,30,NO,,,,
+postgresql,public,production_shift,start_time,4,time,,NO,,,,
+postgresql,public,production_shift,end_time,5,time,,NO,,,,
+postgresql,public,production_shift,shift_type,6,character varying,20,YES,,,,
+postgresql,public,production_schedule,schedule_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,production_schedule,line_id,2,integer,,NO,FOREIGN KEY,public,production_line,line_id
+postgresql,public,production_schedule,product_id,3,integer,,NO,FOREIGN KEY,public,product,product_id
+postgresql,public,production_schedule,shift_id,4,integer,,NO,FOREIGN KEY,public,production_shift,shift_id
+postgresql,public,production_schedule,scheduled_date,5,date,,NO,,,,
+postgresql,public,production_schedule,planned_qty,6,numeric,,NO,,,,
+postgresql,public,production_schedule,uom_id,7,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,production_schedule,status,8,character varying,20,YES,,,,
+postgresql,public,work_order,wo_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,work_order,wo_number,2,character varying,20,NO,,,,
+postgresql,public,work_order,schedule_id,3,integer,,YES,FOREIGN KEY,public,production_schedule,schedule_id
+postgresql,public,work_order,line_id,4,integer,,NO,FOREIGN KEY,public,production_line,line_id
+postgresql,public,work_order,product_id,5,integer,,NO,FOREIGN KEY,public,product,product_id
+postgresql,public,work_order,planned_qty,6,numeric,,NO,,,,
+postgresql,public,work_order,actual_qty,7,numeric,,YES,,,,
+postgresql,public,work_order,uom_id,8,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,work_order,start_time,9,timestamp,,YES,,,,
+postgresql,public,work_order,end_time,10,timestamp,,YES,,,,
+postgresql,public,work_order,status,11,character varying,20,YES,,,,
+postgresql,public,work_order,supervisor_id,12,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,work_order_step,step_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,work_order_step,wo_id,2,integer,,NO,FOREIGN KEY,public,work_order,wo_id
+postgresql,public,work_order_step,step_number,3,integer,,NO,,,,
+postgresql,public,work_order_step,step_name,4,character varying,100,NO,,,,
+postgresql,public,work_order_step,planned_duration_min,5,integer,,YES,,,,
+postgresql,public,work_order_step,actual_duration_min,6,integer,,YES,,,,
+postgresql,public,work_order_step,status,7,character varying,20,YES,,,,
+postgresql,public,production_batch,batch_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,production_batch,batch_number,2,character varying,50,NO,,,,
+postgresql,public,production_batch,wo_id,3,integer,,NO,FOREIGN KEY,public,work_order,wo_id
+postgresql,public,production_batch,product_id,4,integer,,NO,FOREIGN KEY,public,product,product_id
+postgresql,public,production_batch,quantity,5,numeric,,NO,,,,
+postgresql,public,production_batch,uom_id,6,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,production_batch,production_date,7,timestamp,,NO,,,,
+postgresql,public,production_batch,expiry_date,8,date,,YES,,,,
+postgresql,public,production_batch,status,9,character varying,20,YES,,,,
+postgresql,public,batch_ingredient_usage,usage_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,batch_ingredient_usage,batch_id,2,integer,,NO,FOREIGN KEY,public,production_batch,batch_id
+postgresql,public,batch_ingredient_usage,ingredient_id,3,integer,,NO,FOREIGN KEY,public,ingredient,ingredient_id
+postgresql,public,batch_ingredient_usage,lot_id,4,integer,,YES,FOREIGN KEY,public,inventory_lot,lot_id
+postgresql,public,batch_ingredient_usage,quantity_used,5,numeric,,NO,,,,
+postgresql,public,batch_ingredient_usage,uom_id,6,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,equipment,equipment_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,equipment,equipment_name,2,character varying,100,NO,,,,
+postgresql,public,equipment,equipment_code,3,character varying,20,NO,,,,
+postgresql,public,equipment,equipment_type,4,character varying,50,YES,,,,
+postgresql,public,equipment,line_id,5,integer,,YES,FOREIGN KEY,public,production_line,line_id
+postgresql,public,equipment,factory_id,6,integer,,NO,FOREIGN KEY,public,factory,factory_id
+postgresql,public,equipment,manufacturer,7,character varying,100,YES,,,,
+postgresql,public,equipment,install_date,8,date,,YES,,,,
+postgresql,public,equipment,status,9,character varying,20,YES,,,,
+postgresql,public,equipment_maintenance,maintenance_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,equipment_maintenance,equipment_id,2,integer,,NO,FOREIGN KEY,public,equipment,equipment_id
+postgresql,public,equipment_maintenance,maintenance_type,3,character varying,30,YES,,,,
+postgresql,public,equipment_maintenance,scheduled_date,4,date,,YES,,,,
+postgresql,public,equipment_maintenance,completed_date,5,date,,YES,,,,
+postgresql,public,equipment_maintenance,technician_id,6,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,equipment_maintenance,duration_hours,7,numeric,,YES,,,,
+postgresql,public,equipment_maintenance,cost,8,numeric,,YES,,,,
+postgresql,public,equipment_maintenance,notes,9,text,,YES,,,,
+postgresql,public,equipment_maintenance,status,10,character varying,20,YES,,,,
+postgresql,public,oee_record,oee_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,oee_record,line_id,2,integer,,NO,FOREIGN KEY,public,production_line,line_id
+postgresql,public,oee_record,record_date,3,date,,NO,,,,
+postgresql,public,oee_record,shift_id,4,integer,,YES,FOREIGN KEY,public,production_shift,shift_id
+postgresql,public,oee_record,availability,5,numeric,,NO,,,,
+postgresql,public,oee_record,performance,6,numeric,,NO,,,,
+postgresql,public,oee_record,quality,7,numeric,,NO,,,,
+postgresql,public,oee_record,oee_percentage,8,numeric,,NO,,,,
+postgresql,public,oee_record,planned_time_min,9,integer,,YES,,,,
+postgresql,public,oee_record,actual_run_time_min,10,integer,,YES,,,,
+postgresql,public,oee_record,ideal_cycle_time,11,numeric,,YES,,,,
+postgresql,public,oee_record,total_count,12,integer,,YES,,,,
+postgresql,public,oee_record,good_count,13,integer,,YES,,,,
+postgresql,public,downtime_event,downtime_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,downtime_event,line_id,2,integer,,NO,FOREIGN KEY,public,production_line,line_id
+postgresql,public,downtime_event,equipment_id,3,integer,,YES,FOREIGN KEY,public,equipment,equipment_id
+postgresql,public,downtime_event,reason_id,4,integer,,NO,FOREIGN KEY,public,downtime_reason,downtime_reason_id
+postgresql,public,downtime_event,start_time,5,timestamp,,NO,,,,
+postgresql,public,downtime_event,end_time,6,timestamp,,YES,,,,
+postgresql,public,downtime_event,duration_min,7,integer,,YES,,,,
+postgresql,public,downtime_event,is_planned,8,boolean,,YES,,,,
+postgresql,public,downtime_event,reported_by,9,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,downtime_reason,downtime_reason_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,downtime_reason,reason_code,2,character varying,20,NO,,,,
+postgresql,public,downtime_reason,reason_name,3,character varying,100,NO,,,,
+postgresql,public,downtime_reason,category,4,character varying,50,YES,,,,
+postgresql,public,downtime_reason,is_planned,5,boolean,,YES,,,,
+postgresql,public,quality_parameter,parameter_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,quality_parameter,parameter_name,2,character varying,100,NO,,,,
+postgresql,public,quality_parameter,parameter_code,3,character varying,20,NO,,,,
+postgresql,public,quality_parameter,parameter_type,4,character varying,30,YES,,,,
+postgresql,public,quality_parameter,uom_id,5,integer,,YES,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,quality_parameter,min_value,6,numeric,,YES,,,,
+postgresql,public,quality_parameter,max_value,7,numeric,,YES,,,,
+postgresql,public,product_specification,spec_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,product_specification,product_id,2,integer,,NO,FOREIGN KEY,public,product,product_id
+postgresql,public,product_specification,parameter_id,3,integer,,NO,FOREIGN KEY,public,quality_parameter,parameter_id
+postgresql,public,product_specification,target_value,4,numeric,,YES,,,,
+postgresql,public,product_specification,lower_limit,5,numeric,,YES,,,,
+postgresql,public,product_specification,upper_limit,6,numeric,,YES,,,,
+postgresql,public,product_specification,is_critical,7,boolean,,YES,,,,
+postgresql,public,quality_inspection,inspection_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,quality_inspection,inspection_type,2,character varying,30,NO,,,,
+postgresql,public,quality_inspection,reference_type,3,character varying,30,YES,,,,
+postgresql,public,quality_inspection,reference_id,4,integer,,YES,,,,
+postgresql,public,quality_inspection,site_id,5,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,quality_inspection,inspector_id,6,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,quality_inspection,inspection_date,7,timestamp,,NO,,,,
+postgresql,public,quality_inspection,overall_result,8,character varying,20,YES,,,,
+postgresql,public,quality_inspection,status,9,character varying,20,YES,,,,
+postgresql,public,inspection_result,result_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,inspection_result,inspection_id,2,integer,,NO,FOREIGN KEY,public,quality_inspection,inspection_id
+postgresql,public,inspection_result,parameter_id,3,integer,,NO,FOREIGN KEY,public,quality_parameter,parameter_id
+postgresql,public,inspection_result,measured_value,4,numeric,,YES,,,,
+postgresql,public,inspection_result,result,5,character varying,20,YES,,,,
+postgresql,public,inspection_result,notes,6,text,,YES,,,,
+postgresql,public,non_conformance,nc_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,non_conformance,nc_number,2,character varying,20,NO,,,,
+postgresql,public,non_conformance,inspection_id,3,integer,,YES,FOREIGN KEY,public,quality_inspection,inspection_id
+postgresql,public,non_conformance,batch_id,4,integer,,YES,FOREIGN KEY,public,production_batch,batch_id
+postgresql,public,non_conformance,supplier_id,5,integer,,YES,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,non_conformance,nc_type,6,character varying,30,YES,,,,
+postgresql,public,non_conformance,severity,7,character varying,20,YES,,,,
+postgresql,public,non_conformance,description,8,text,,NO,,,,
+postgresql,public,non_conformance,reported_date,9,timestamp,,NO,,,,
+postgresql,public,non_conformance,reported_by,10,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,non_conformance,root_cause,11,text,,YES,,,,
+postgresql,public,non_conformance,disposition,12,character varying,30,YES,,,,
+postgresql,public,non_conformance,status,13,character varying,20,YES,,,,
+postgresql,public,corrective_action,action_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,corrective_action,nc_id,2,integer,,NO,FOREIGN KEY,public,non_conformance,nc_id
+postgresql,public,corrective_action,action_type,3,character varying,30,YES,,,,
+postgresql,public,corrective_action,description,4,text,,NO,,,,
+postgresql,public,corrective_action,assigned_to,5,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,corrective_action,due_date,6,date,,YES,,,,
+postgresql,public,corrective_action,completion_date,7,date,,YES,,,,
+postgresql,public,corrective_action,verification_date,8,date,,YES,,,,
+postgresql,public,corrective_action,verified_by,9,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,corrective_action,status,10,character varying,20,YES,,,,
+postgresql,public,lab_test,test_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,lab_test,test_number,2,character varying,20,NO,,,,
+postgresql,public,lab_test,inspection_id,3,integer,,YES,FOREIGN KEY,public,quality_inspection,inspection_id
+postgresql,public,lab_test,sample_id,4,character varying,50,YES,,,,
+postgresql,public,lab_test,lab_name,5,character varying,100,YES,,,,
+postgresql,public,lab_test,requested_date,6,timestamp,,NO,,,,
+postgresql,public,lab_test,completed_date,7,timestamp,,YES,,,,
+postgresql,public,lab_test,status,8,character varying,20,YES,,,,
+postgresql,public,lab_test_result,test_result_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,lab_test_result,test_id,2,integer,,NO,FOREIGN KEY,public,lab_test,test_id
+postgresql,public,lab_test_result,parameter_id,3,integer,,NO,FOREIGN KEY,public,quality_parameter,parameter_id
+postgresql,public,lab_test_result,result_value,4,numeric,,YES,,,,
+postgresql,public,lab_test_result,result_text,5,character varying,100,YES,,,,
+postgresql,public,lab_test_result,pass_fail,6,character varying,10,YES,,,,
+postgresql,public,recall_event,recall_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,recall_event,recall_number,2,character varying,20,NO,,,,
+postgresql,public,recall_event,product_id,3,integer,,NO,FOREIGN KEY,public,product,product_id
+postgresql,public,recall_event,batch_id,4,integer,,YES,FOREIGN KEY,public,production_batch,batch_id
+postgresql,public,recall_event,recall_type,5,character varying,20,YES,,,,
+postgresql,public,recall_event,recall_class,6,character varying,10,YES,,,,
+postgresql,public,recall_event,reason,7,text,,NO,,,,
+postgresql,public,recall_event,initiated_date,8,date,,NO,,,,
+postgresql,public,recall_event,affected_qty,9,numeric,,YES,,,,
+postgresql,public,recall_event,regions_affected,10,text,,YES,,,,
+postgresql,public,recall_event,status,11,character varying,20,YES,,,,
+postgresql,public,recall_event,lead_id,12,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,carrier,carrier_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,carrier,carrier_name,2,character varying,100,NO,,,,
+postgresql,public,carrier,carrier_code,3,character varying,20,NO,,,,
+postgresql,public,carrier,carrier_type,4,character varying,30,YES,,,,
+postgresql,public,carrier,country_id,5,integer,,YES,FOREIGN KEY,public,country,country_id
+postgresql,public,carrier,is_cold_chain_certified,6,boolean,,YES,,,,
+postgresql,public,carrier,status,7,character varying,20,YES,,,,
+postgresql,public,vehicle_type,vehicle_type_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,vehicle_type,type_name,2,character varying,50,NO,,,,
+postgresql,public,vehicle_type,is_refrigerated,3,boolean,,YES,,,,
+postgresql,public,vehicle_type,max_payload_kg,4,numeric,,YES,,,,
+postgresql,public,vehicle_type,temp_min,5,numeric,,YES,,,,
+postgresql,public,vehicle_type,temp_max,6,numeric,,YES,,,,
+postgresql,public,vehicle,vehicle_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,vehicle,vehicle_code,2,character varying,20,NO,,,,
+postgresql,public,vehicle,carrier_id,3,integer,,NO,FOREIGN KEY,public,carrier,carrier_id
+postgresql,public,vehicle,vehicle_type_id,4,integer,,NO,FOREIGN KEY,public,vehicle_type,vehicle_type_id
+postgresql,public,vehicle,license_plate,5,character varying,20,YES,,,,
+postgresql,public,vehicle,gps_tracker_id,6,character varying,50,YES,,,,
+postgresql,public,vehicle,last_maintenance,7,date,,YES,,,,
+postgresql,public,vehicle,status,8,character varying,20,YES,,,,
+postgresql,public,route,route_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,route,route_name,2,character varying,100,NO,,,,
+postgresql,public,route,route_code,3,character varying,20,NO,,,,
+postgresql,public,route,origin_site_id,4,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,route,dest_site_id,5,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,route,distance_km,6,numeric,,YES,,,,
+postgresql,public,route,est_duration_hrs,7,numeric,,YES,,,,
+postgresql,public,route,is_cold_chain,8,boolean,,YES,,,,
+postgresql,public,route_waypoint,waypoint_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,route_waypoint,route_id,2,integer,,NO,FOREIGN KEY,public,route,route_id
+postgresql,public,route_waypoint,sequence_order,3,integer,,NO,,,,
+postgresql,public,route_waypoint,site_id,4,integer,,YES,FOREIGN KEY,public,site,site_id
+postgresql,public,route_waypoint,waypoint_name,5,character varying,100,YES,,,,
+postgresql,public,route_waypoint,latitude,6,numeric,,YES,,,,
+postgresql,public,route_waypoint,longitude,7,numeric,,YES,,,,
+postgresql,public,route_waypoint,est_arrival_offset_hrs,8,numeric,,YES,,,,
+postgresql,public,shipment,shipment_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,shipment,shipment_number,2,character varying,20,NO,,,,
+postgresql,public,shipment,po_id,3,integer,,YES,FOREIGN KEY,public,purchase_order,po_id
+postgresql,public,shipment,supplier_id,4,integer,,YES,FOREIGN KEY,public,supplier,supplier_id
+postgresql,public,shipment,carrier_id,5,integer,,NO,FOREIGN KEY,public,carrier,carrier_id
+postgresql,public,shipment,vehicle_id,6,integer,,YES,FOREIGN KEY,public,vehicle,vehicle_id
+postgresql,public,shipment,route_id,7,integer,,YES,FOREIGN KEY,public,route,route_id
+postgresql,public,shipment,origin_site_id,8,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,shipment,dest_site_id,9,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,shipment,ship_date,10,timestamp,,YES,,,,
+postgresql,public,shipment,est_arrival,11,timestamp,,YES,,,,
+postgresql,public,shipment,actual_arrival,12,timestamp,,YES,,,,
+postgresql,public,shipment,status,13,character varying,20,YES,,,,
+postgresql,public,shipment,is_cold_chain,14,boolean,,YES,,,,
+postgresql,public,shipment_line,shipment_line_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,shipment_line,shipment_id,2,integer,,NO,FOREIGN KEY,public,shipment,shipment_id
+postgresql,public,shipment_line,material_id,3,integer,,NO,FOREIGN KEY,public,material_master,material_id
+postgresql,public,shipment_line,quantity,4,numeric,,NO,,,,
+postgresql,public,shipment_line,uom_id,5,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,shipment_line,po_line_id,6,integer,,YES,FOREIGN KEY,public,purchase_order_line,po_line_id
+postgresql,public,shipment_line,lot_number,7,character varying,50,YES,,,,
+postgresql,public,delivery,delivery_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,delivery,delivery_number,2,character varying,20,NO,,,,
+postgresql,public,delivery,shipment_id,3,integer,,YES,FOREIGN KEY,public,shipment,shipment_id
+postgresql,public,delivery,site_id,4,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,delivery,delivery_date,5,timestamp,,NO,,,,
+postgresql,public,delivery,received_by,6,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,delivery,dock_id,7,integer,,YES,FOREIGN KEY,public,loading_dock,dock_id
+postgresql,public,delivery,status,8,character varying,20,YES,,,,
+postgresql,public,delivery_line,delivery_line_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,delivery_line,delivery_id,2,integer,,NO,FOREIGN KEY,public,delivery,delivery_id
+postgresql,public,delivery_line,material_id,3,integer,,NO,FOREIGN KEY,public,material_master,material_id
+postgresql,public,delivery_line,expected_qty,4,numeric,,YES,,,,
+postgresql,public,delivery_line,received_qty,5,numeric,,YES,,,,
+postgresql,public,delivery_line,uom_id,6,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,delivery_line,condition,7,character varying,20,YES,,,,
+postgresql,public,loading_dock,dock_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,loading_dock,site_id,2,integer,,NO,FOREIGN KEY,public,site,site_id
+postgresql,public,loading_dock,dock_code,3,character varying,10,NO,,,,
+postgresql,public,loading_dock,dock_type,4,character varying,20,YES,,,,
+postgresql,public,loading_dock,is_refrigerated,5,boolean,,YES,,,,
+postgresql,public,loading_dock,status,6,character varying,20,YES,,,,
+postgresql,public,temperature_reading,reading_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,temperature_reading,vehicle_id,2,integer,,YES,FOREIGN KEY,public,vehicle,vehicle_id
+postgresql,public,temperature_reading,shipment_id,3,integer,,YES,FOREIGN KEY,public,shipment,shipment_id
+postgresql,public,temperature_reading,warehouse_id,4,integer,,YES,FOREIGN KEY,public,warehouse,warehouse_id
+postgresql,public,temperature_reading,sensor_id,5,character varying,30,NO,,,,
+postgresql,public,temperature_reading,temperature,6,numeric,,NO,,,,
+postgresql,public,temperature_reading,humidity,7,numeric,,YES,,,,
+postgresql,public,temperature_reading,reading_time,8,timestamp,,NO,,,,
+postgresql,public,temperature_reading,latitude,9,numeric,,YES,,,,
+postgresql,public,temperature_reading,longitude,10,numeric,,YES,,,,
+postgresql,public,temperature_reading,is_excursion,11,boolean,,YES,,,,
+postgresql,public,tracking_event,event_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,tracking_event,shipment_id,2,integer,,NO,FOREIGN KEY,public,shipment,shipment_id
+postgresql,public,tracking_event,event_type,3,character varying,30,YES,,,,
+postgresql,public,tracking_event,event_time,4,timestamp,,NO,,,,
+postgresql,public,tracking_event,location_name,5,character varying,100,YES,,,,
+postgresql,public,tracking_event,latitude,6,numeric,,YES,,,,
+postgresql,public,tracking_event,longitude,7,numeric,,YES,,,,
+postgresql,public,tracking_event,notes,8,character varying,200,YES,,,,
+postgresql,public,freight_cost,cost_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,freight_cost,shipment_id,2,integer,,NO,FOREIGN KEY,public,shipment,shipment_id
+postgresql,public,freight_cost,carrier_id,3,integer,,NO,FOREIGN KEY,public,carrier,carrier_id
+postgresql,public,freight_cost,cost_type,4,character varying,30,YES,,,,
+postgresql,public,freight_cost,amount,5,numeric,,NO,,,,
+postgresql,public,freight_cost,currency_id,6,integer,,YES,FOREIGN KEY,public,currency,currency_id
+postgresql,public,freight_cost,invoice_ref,7,character varying,50,YES,,,,
+postgresql,public,alert_rule,rule_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,alert_rule,rule_name,2,character varying,100,NO,,,,
+postgresql,public,alert_rule,rule_code,3,character varying,20,NO,,,,
+postgresql,public,alert_rule,domain,4,character varying,30,NO,,,,
+postgresql,public,alert_rule,condition_type,5,character varying,30,YES,,,,
+postgresql,public,alert_rule,metric,6,character varying,50,YES,,,,
+postgresql,public,alert_rule,operator,7,character varying,10,YES,,,,
+postgresql,public,alert_rule,threshold_value,8,numeric,,YES,,,,
+postgresql,public,alert_rule,severity,9,character varying,20,NO,,,,
+postgresql,public,alert_rule,is_active,10,boolean,,YES,,,,
+postgresql,public,alert_rule,created_by,11,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,alert,alert_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,alert,rule_id,2,integer,,NO,FOREIGN KEY,public,alert_rule,rule_id
+postgresql,public,alert,alert_time,3,timestamp,,NO,,,,
+postgresql,public,alert,severity,4,character varying,20,NO,,,,
+postgresql,public,alert,title,5,character varying,200,NO,,,,
+postgresql,public,alert,message,6,text,,NO,,,,
+postgresql,public,alert,domain,7,character varying,30,NO,,,,
+postgresql,public,alert,reference_type,8,character varying,30,YES,,,,
+postgresql,public,alert,reference_id,9,integer,,YES,,,,
+postgresql,public,alert,site_id,10,integer,,YES,FOREIGN KEY,public,site,site_id
+postgresql,public,alert,current_value,11,numeric,,YES,,,,
+postgresql,public,alert,threshold_value,12,numeric,,YES,,,,
+postgresql,public,alert,status,13,character varying,20,YES,,,,
+postgresql,public,alert_acknowledgment,ack_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,alert_acknowledgment,alert_id,2,integer,,NO,FOREIGN KEY,public,alert,alert_id
+postgresql,public,alert_acknowledgment,acknowledged_by,3,integer,,NO,FOREIGN KEY,public,employee,employee_id
+postgresql,public,alert_acknowledgment,ack_time,4,timestamp,,NO,,,,
+postgresql,public,alert_acknowledgment,action_taken,5,text,,YES,,,,
+postgresql,public,alert_acknowledgment,resolution,6,text,,YES,,,,
+postgresql,public,alert_acknowledgment,resolved_time,7,timestamp,,YES,,,,
+postgresql,public,alert_escalation,escalation_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,alert_escalation,alert_id,2,integer,,NO,FOREIGN KEY,public,alert,alert_id
+postgresql,public,alert_escalation,escalation_level,3,integer,,NO,,,,
+postgresql,public,alert_escalation,escalated_to,4,integer,,NO,FOREIGN KEY,public,employee,employee_id
+postgresql,public,alert_escalation,escalated_time,5,timestamp,,NO,,,,
+postgresql,public,alert_escalation,reason,6,character varying,200,YES,,,,
+postgresql,public,kpi_definition,kpi_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,kpi_definition,kpi_name,2,character varying,100,NO,,,,
+postgresql,public,kpi_definition,kpi_code,3,character varying,20,NO,,,,
+postgresql,public,kpi_definition,domain,4,character varying,30,YES,,,,
+postgresql,public,kpi_definition,description,5,text,,YES,,,,
+postgresql,public,kpi_definition,uom_id,6,integer,,YES,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,kpi_definition,aggregation,7,character varying,20,YES,,,,
+postgresql,public,kpi_definition,direction,8,character varying,10,YES,,,,
+postgresql,public,kpi_target,target_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,kpi_target,kpi_id,2,integer,,NO,FOREIGN KEY,public,kpi_definition,kpi_id
+postgresql,public,kpi_target,site_id,3,integer,,YES,FOREIGN KEY,public,site,site_id
+postgresql,public,kpi_target,period_id,4,integer,,NO,FOREIGN KEY,public,fiscal_period,period_id
+postgresql,public,kpi_target,target_value,5,numeric,,NO,,,,
+postgresql,public,kpi_target,stretch_value,6,numeric,,YES,,,,
+postgresql,public,kpi_target,floor_value,7,numeric,,YES,,,,
+postgresql,public,kpi_measurement,measurement_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,kpi_measurement,kpi_id,2,integer,,NO,FOREIGN KEY,public,kpi_definition,kpi_id
+postgresql,public,kpi_measurement,site_id,3,integer,,YES,FOREIGN KEY,public,site,site_id
+postgresql,public,kpi_measurement,measured_date,4,date,,NO,,,,
+postgresql,public,kpi_measurement,measured_value,5,numeric,,NO,,,,
+postgresql,public,kpi_measurement,period_id,6,integer,,YES,FOREIGN KEY,public,fiscal_period,period_id
+postgresql,public,dashboard_config,config_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,dashboard_config,dashboard_name,2,character varying,100,NO,,,,
+postgresql,public,dashboard_config,owner_id,3,integer,,NO,FOREIGN KEY,public,employee,employee_id
+postgresql,public,dashboard_config,layout_json,4,text,,YES,,,,
+postgresql,public,dashboard_config,is_default,5,boolean,,YES,,,,
+postgresql,public,dashboard_config,created_date,6,timestamp,,NO,,,,
+postgresql,public,dashboard_config,modified_date,7,timestamp,,YES,,,,
+postgresql,public,customer,customer_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,customer,customer_name,2,character varying,200,NO,,,,
+postgresql,public,customer,customer_code,3,character varying,20,NO,,,,
+postgresql,public,customer,customer_type,4,character varying,30,YES,,,,
+postgresql,public,customer,country_id,5,integer,,NO,FOREIGN KEY,public,country,country_id
+postgresql,public,customer,region_id,6,integer,,YES,FOREIGN KEY,public,region,region_id
+postgresql,public,customer,credit_limit,7,numeric,,YES,,,,
+postgresql,public,customer,payment_terms,8,character varying,30,YES,,,,
+postgresql,public,customer,status,9,character varying,20,YES,,,,
+postgresql,public,sales_order,order_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,sales_order,order_number,2,character varying,20,NO,,,,
+postgresql,public,sales_order,customer_id,3,integer,,NO,FOREIGN KEY,public,customer,customer_id
+postgresql,public,sales_order,order_date,4,timestamp,,NO,,,,
+postgresql,public,sales_order,requested_date,5,date,,YES,,,,
+postgresql,public,sales_order,ship_to_site,6,integer,,YES,FOREIGN KEY,public,site,site_id
+postgresql,public,sales_order,total_amount,7,numeric,,YES,,,,
+postgresql,public,sales_order,currency_id,8,integer,,YES,FOREIGN KEY,public,currency,currency_id
+postgresql,public,sales_order,priority,9,character varying,10,YES,,,,
+postgresql,public,sales_order,status,10,character varying,20,YES,,,,
+postgresql,public,sales_order_line,order_line_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,sales_order_line,order_id,2,integer,,NO,FOREIGN KEY,public,sales_order,order_id
+postgresql,public,sales_order_line,product_id,3,integer,,NO,FOREIGN KEY,public,product,product_id
+postgresql,public,sales_order_line,variant_id,4,integer,,YES,FOREIGN KEY,public,product_variant,variant_id
+postgresql,public,sales_order_line,quantity,5,numeric,,NO,,,,
+postgresql,public,sales_order_line,uom_id,6,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,sales_order_line,unit_price,7,numeric,,YES,,,,
+postgresql,public,sales_order_line,line_total,8,numeric,,YES,,,,
+postgresql,public,sales_order_line,line_number,9,integer,,NO,,,,
+postgresql,public,demand_forecast,forecast_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,demand_forecast,forecast_name,2,character varying,100,NO,,,,
+postgresql,public,demand_forecast,period_id,3,integer,,NO,FOREIGN KEY,public,fiscal_period,period_id
+postgresql,public,demand_forecast,created_by,4,integer,,YES,FOREIGN KEY,public,employee,employee_id
+postgresql,public,demand_forecast,created_date,5,timestamp,,NO,,,,
+postgresql,public,demand_forecast,forecast_type,6,character varying,30,YES,,,,
+postgresql,public,demand_forecast,status,7,character varying,20,YES,,,,
+postgresql,public,forecast_line,forecast_line_id,1,integer,,NO,PRIMARY KEY,,,
+postgresql,public,forecast_line,forecast_id,2,integer,,NO,FOREIGN KEY,public,demand_forecast,forecast_id
+postgresql,public,forecast_line,product_id,3,integer,,NO,FOREIGN KEY,public,product,product_id
+postgresql,public,forecast_line,site_id,4,integer,,YES,FOREIGN KEY,public,site,site_id
+postgresql,public,forecast_line,region_id,5,integer,,YES,FOREIGN KEY,public,region,region_id
+postgresql,public,forecast_line,forecast_qty,6,numeric,,NO,,,,
+postgresql,public,forecast_line,uom_id,7,integer,,NO,FOREIGN KEY,public,unit_of_measure,uom_id
+postgresql,public,forecast_line,confidence,8,numeric,,YES,,,,

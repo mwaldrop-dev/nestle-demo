@@ -1,0 +1,1385 @@
+// ============================================================================
+// NESTLE SUPPLY CHAIN OPERATIONS — ENTITY RELATIONSHIP MODEL
+// 100 tables across 10 domains
+// Generated for dbdiagram.io
+// ============================================================================
+
+// ─── DOMAIN 1: MASTER DATA & REFERENCE ───
+
+Table region {
+  region_id int [pk]
+  region_name varchar [not null]
+  region_code varchar [not null]
+  parent_region_id int
+  is_active boolean [default: true]
+}
+
+Table country {
+  country_id int [pk]
+  country_name varchar [not null]
+  iso_code_2 char [not null]
+  iso_code_3 char [not null]
+  region_id int [not null]
+  currency_code varchar [not null]
+}
+
+Table currency {
+  currency_id int [pk]
+  currency_code char [not null]
+  currency_name varchar [not null]
+  symbol varchar
+  exchange_rate decimal
+  rate_date date
+}
+
+Table unit_of_measure {
+  uom_id int [pk]
+  uom_code varchar [not null]
+  uom_name varchar [not null]
+  uom_type varchar [not null]
+  base_factor decimal [default: 1.0]
+}
+
+Table fiscal_period {
+  period_id int [pk]
+  period_name varchar [not null]
+  fiscal_year int [not null]
+  quarter int [not null]
+  start_date date [not null]
+  end_date date [not null]
+  is_closed boolean [default: false]
+}
+
+Table brand {
+  brand_id int [pk]
+  brand_name varchar [not null]
+  brand_code varchar [not null]
+  parent_brand_id int
+  market_segment varchar
+}
+
+Table product_category {
+  category_id int [pk]
+  category_name varchar [not null]
+  category_code varchar [not null]
+  parent_category_id int
+  level int [not null, default: 1]
+}
+
+Table product {
+  product_id int [pk]
+  product_name varchar [not null]
+  sku varchar [not null]
+  brand_id int [not null]
+  category_id int [not null]
+  base_uom_id int [not null]
+  shelf_life_days int
+  is_cold_chain boolean [default: false]
+  min_temp_celsius decimal
+  max_temp_celsius decimal
+  status varchar [default: 'active']
+}
+
+Table product_variant {
+  variant_id int [pk]
+  product_id int [not null]
+  variant_name varchar [not null]
+  variant_sku varchar [not null]
+  net_weight decimal
+  gross_weight decimal
+  weight_uom_id int
+  barcode varchar
+}
+
+Table ingredient {
+  ingredient_id int [pk]
+  ingredient_name varchar [not null]
+  ingredient_code varchar [not null]
+  category varchar
+  is_allergen boolean [default: false]
+  allergen_type varchar
+  country_of_origin int
+  is_organic boolean [default: false]
+  shelf_life_days int
+}
+
+Table product_ingredient {
+  product_ingredient_id int [pk]
+  product_id int [not null]
+  ingredient_id int [not null]
+  percentage decimal
+  is_primary boolean [default: false]
+  sequence_order int
+}
+
+Table packaging_type {
+  packaging_type_id int [pk]
+  type_name varchar [not null]
+  material varchar
+  is_recyclable boolean [default: false]
+  weight_grams decimal
+}
+
+Table regulatory_standard {
+  standard_id int [pk]
+  standard_name varchar [not null]
+  standard_code varchar [not null]
+  issuing_body varchar
+  country_id int
+  category varchar
+}
+
+Table certification_type {
+  cert_type_id int [pk]
+  cert_name varchar [not null]
+  cert_code varchar [not null]
+  issuing_body varchar
+  validity_months int
+  standard_id int
+}
+
+// ─── DOMAIN 2: ORGANIZATION & PERSONNEL ───
+
+Table business_unit {
+  bu_id int [pk]
+  bu_name varchar [not null]
+  bu_code varchar [not null]
+  region_id int
+  parent_bu_id int
+}
+
+Table site {
+  site_id int [pk]
+  site_name varchar [not null]
+  site_code varchar [not null]
+  site_type varchar [not null]
+  bu_id int [not null]
+  country_id int [not null]
+  city varchar
+  address varchar
+  latitude decimal
+  longitude decimal
+  is_active boolean [default: true]
+}
+
+Table department {
+  department_id int [pk]
+  department_name varchar [not null]
+  department_code varchar [not null]
+  site_id int [not null]
+  parent_dept_id int
+}
+
+Table role {
+  role_id int [pk]
+  role_name varchar [not null]
+  role_code varchar [not null]
+  role_level varchar
+}
+
+Table employee {
+  employee_id int [pk]
+  employee_code varchar [not null]
+  first_name varchar [not null]
+  last_name varchar [not null]
+  email varchar
+  department_id int [not null]
+  role_id int [not null]
+  manager_id int
+  hire_date date [not null]
+  is_active boolean [default: true]
+}
+
+Table team {
+  team_id int [pk]
+  team_name varchar [not null]
+  team_type varchar
+  lead_id int
+  site_id int
+}
+
+Table team_member {
+  team_member_id int [pk]
+  team_id int [not null]
+  employee_id int [not null]
+  role_in_team varchar
+  joined_date date [not null]
+}
+
+// ─── DOMAIN 3: SUPPLIER MANAGEMENT ───
+
+Table supplier_tier {
+  tier_id int [pk]
+  tier_name varchar [not null]
+  tier_level int [not null]
+  description varchar
+}
+
+Table supplier {
+  supplier_id int [pk]
+  supplier_name varchar [not null]
+  supplier_code varchar [not null]
+  tier_id int [not null]
+  country_id int [not null]
+  city varchar
+  primary_contact varchar
+  email varchar
+  phone varchar
+  onboarded_date date
+  status varchar [default: 'active']
+  risk_score decimal
+  strategic_flag boolean [default: false]
+}
+
+Table supplier_contact {
+  contact_id int [pk]
+  supplier_id int [not null]
+  contact_name varchar [not null]
+  title varchar
+  email varchar
+  phone varchar
+  is_primary boolean [default: false]
+}
+
+Table supplier_material {
+  supplier_material_id int [pk]
+  supplier_id int [not null]
+  ingredient_id int [not null]
+  lead_time_days int
+  min_order_qty decimal
+  unit_price decimal
+  currency_id int
+  is_preferred boolean [default: false]
+}
+
+Table supplier_contract {
+  contract_id int [pk]
+  supplier_id int [not null]
+  contract_ref varchar [not null]
+  start_date date [not null]
+  end_date date [not null]
+  total_value decimal
+  currency_id int
+  payment_terms varchar
+  incoterm varchar
+  status varchar [default: 'active']
+}
+
+Table contract_line_item {
+  line_id int [pk]
+  contract_id int [not null]
+  ingredient_id int [not null]
+  agreed_qty decimal
+  unit_price decimal
+  uom_id int
+  delivery_schedule varchar
+}
+
+Table supplier_certification {
+  supplier_cert_id int [pk]
+  supplier_id int [not null]
+  cert_type_id int [not null]
+  cert_number varchar
+  issued_date date [not null]
+  expiry_date date [not null]
+  status varchar [default: 'valid']
+}
+
+Table supplier_audit {
+  audit_id int [pk]
+  supplier_id int [not null]
+  audit_date date [not null]
+  auditor_id int
+  audit_type varchar
+  overall_score decimal
+  findings_count int [default: 0]
+  status varchar
+  next_audit_date date
+}
+
+Table supplier_risk_assessment {
+  assessment_id int [pk]
+  supplier_id int [not null]
+  assessment_date date [not null]
+  assessor_id int
+  financial_risk decimal
+  operational_risk decimal
+  geopolitical_risk decimal
+  quality_risk decimal
+  overall_risk decimal
+  risk_category varchar
+}
+
+Table supplier_performance {
+  performance_id int [pk]
+  supplier_id int [not null]
+  period_id int [not null]
+  otd_percentage decimal
+  quality_score decimal
+  responsiveness decimal
+  cost_competitiveness decimal
+  overall_rating decimal
+  total_shipments int
+  on_time_shipments int
+  rejected_shipments int
+}
+
+Table approved_supplier_list {
+  asl_id int [pk]
+  supplier_id int [not null]
+  ingredient_id int [not null]
+  site_id int [not null]
+  approved_date date [not null]
+  approved_by int
+  status varchar [default: 'approved']
+}
+
+// ─── DOMAIN 4: PROCUREMENT ───
+
+Table purchase_requisition {
+  requisition_id int [pk]
+  requisition_no varchar [not null]
+  requester_id int [not null]
+  site_id int [not null]
+  created_date timestamp [not null]
+  required_date date
+  priority varchar
+  status varchar [default: 'draft']
+}
+
+Table purchase_requisition_line {
+  req_line_id int [pk]
+  requisition_id int [not null]
+  ingredient_id int [not null]
+  quantity decimal [not null]
+  uom_id int [not null]
+  estimated_cost decimal
+  line_number int [not null]
+}
+
+Table purchase_order {
+  po_id int [pk]
+  po_number varchar [not null]
+  supplier_id int [not null]
+  contract_id int
+  site_id int [not null]
+  buyer_id int [not null]
+  order_date timestamp [not null]
+  expected_delivery date
+  total_amount decimal
+  currency_id int
+  incoterm varchar
+  status varchar [default: 'submitted']
+}
+
+Table purchase_order_line {
+  po_line_id int [pk]
+  po_id int [not null]
+  ingredient_id int [not null]
+  quantity decimal [not null]
+  uom_id int [not null]
+  unit_price decimal [not null]
+  line_total decimal
+  line_number int [not null]
+}
+
+Table goods_receipt {
+  receipt_id int [pk]
+  receipt_number varchar [not null]
+  po_id int [not null]
+  site_id int [not null]
+  received_by int
+  receipt_date timestamp [not null]
+  status varchar [default: 'pending']
+}
+
+Table goods_receipt_line {
+  receipt_line_id int [pk]
+  receipt_id int [not null]
+  po_line_id int [not null]
+  received_qty decimal [not null]
+  accepted_qty decimal
+  rejected_qty decimal [default: 0]
+  lot_number varchar
+  expiry_date date
+}
+
+Table invoice {
+  invoice_id int [pk]
+  invoice_number varchar [not null]
+  supplier_id int [not null]
+  po_id int
+  invoice_date date [not null]
+  due_date date [not null]
+  total_amount decimal [not null]
+  currency_id int
+  status varchar [default: 'received']
+}
+
+Table invoice_line {
+  invoice_line_id int [pk]
+  invoice_id int [not null]
+  po_line_id int
+  description varchar
+  quantity decimal
+  unit_price decimal
+  line_total decimal
+}
+
+Table payment {
+  payment_id int [pk]
+  invoice_id int [not null]
+  payment_date date [not null]
+  amount decimal [not null]
+  currency_id int
+  payment_method varchar
+  reference varchar
+  status varchar [default: 'completed']
+}
+
+// ─── DOMAIN 5: INVENTORY MANAGEMENT ───
+
+Table warehouse {
+  warehouse_id int [pk]
+  warehouse_name varchar [not null]
+  warehouse_code varchar [not null]
+  site_id int [not null]
+  warehouse_type varchar
+  capacity decimal
+  capacity_uom int
+  is_cold_storage boolean [default: false]
+  temp_min decimal
+  temp_max decimal
+}
+
+Table warehouse_zone {
+  zone_id int [pk]
+  warehouse_id int [not null]
+  zone_name varchar [not null]
+  zone_type varchar
+  temp_min decimal
+  temp_max decimal
+}
+
+Table storage_location {
+  location_id int [pk]
+  zone_id int [not null]
+  location_code varchar [not null]
+  aisle varchar
+  rack varchar
+  shelf varchar
+  bin varchar
+  max_weight_kg decimal
+}
+
+Table material_master {
+  material_id int [pk]
+  material_code varchar [not null]
+  material_name varchar [not null]
+  material_type varchar
+  ingredient_id int
+  product_id int
+  base_uom_id int [not null]
+  standard_cost decimal
+  currency_id int
+}
+
+Table inventory_lot {
+  lot_id int [pk]
+  lot_number varchar [not null]
+  material_id int [not null]
+  location_id int [not null]
+  supplier_id int
+  receipt_id int
+  quantity decimal [not null]
+  uom_id int [not null]
+  production_date date
+  expiry_date date
+  status varchar [default: 'available']
+}
+
+Table stock_level {
+  stock_level_id int [pk]
+  material_id int [not null]
+  site_id int [not null]
+  quantity decimal [not null]
+  uom_id int [not null]
+  days_of_cover decimal
+  last_updated timestamp [not null]
+}
+
+Table safety_stock_config {
+  config_id int [pk]
+  material_id int [not null]
+  site_id int [not null]
+  safety_stock_qty decimal [not null]
+  safety_days int [not null]
+  uom_id int [not null]
+  review_date date
+}
+
+Table reorder_point_config {
+  config_id int [pk]
+  material_id int [not null]
+  site_id int [not null]
+  reorder_point decimal [not null]
+  reorder_qty decimal [not null]
+  lead_time_days int [not null]
+  uom_id int [not null]
+}
+
+Table inventory_transaction {
+  transaction_id int [pk]
+  material_id int [not null]
+  lot_id int
+  site_id int [not null]
+  transaction_type varchar [not null]
+  quantity decimal [not null]
+  uom_id int [not null]
+  reference_type varchar
+  reference_id int
+  transaction_date timestamp [not null]
+  created_by int
+}
+
+Table cycle_count {
+  count_id int [pk]
+  warehouse_id int [not null]
+  count_date date [not null]
+  initiated_by int
+  status varchar [default: 'planned']
+  variance_value decimal
+}
+
+Table cycle_count_line {
+  count_line_id int [pk]
+  count_id int [not null]
+  material_id int [not null]
+  location_id int [not null]
+  system_qty decimal [not null]
+  counted_qty decimal
+  variance_qty decimal
+  counted_by int
+}
+
+// ─── DOMAIN 6: PRODUCTION & MANUFACTURING ───
+
+Table factory {
+  factory_id int [pk]
+  site_id int [not null]
+  factory_code varchar [not null]
+  total_lines int [not null]
+  max_capacity decimal
+  capacity_uom_id int
+  operating_hours decimal [default: 24.0]
+}
+
+Table production_line {
+  line_id int [pk]
+  factory_id int [not null]
+  line_name varchar [not null]
+  line_code varchar [not null]
+  line_type varchar
+  max_throughput decimal
+  throughput_uom int
+  status varchar [default: 'active']
+}
+
+Table line_product_capability {
+  capability_id int [pk]
+  line_id int [not null]
+  product_id int [not null]
+  changeover_minutes int
+  std_throughput decimal
+}
+
+Table production_shift {
+  shift_id int [pk]
+  factory_id int [not null]
+  shift_name varchar [not null]
+  start_time time [not null]
+  end_time time [not null]
+  shift_type varchar
+}
+
+Table production_schedule {
+  schedule_id int [pk]
+  line_id int [not null]
+  product_id int [not null]
+  shift_id int [not null]
+  scheduled_date date [not null]
+  planned_qty decimal [not null]
+  uom_id int [not null]
+  status varchar [default: 'planned']
+}
+
+Table work_order {
+  wo_id int [pk]
+  wo_number varchar [not null]
+  schedule_id int
+  line_id int [not null]
+  product_id int [not null]
+  planned_qty decimal [not null]
+  actual_qty decimal
+  uom_id int [not null]
+  start_time timestamp
+  end_time timestamp
+  status varchar [default: 'created']
+  supervisor_id int
+}
+
+Table work_order_step {
+  step_id int [pk]
+  wo_id int [not null]
+  step_number int [not null]
+  step_name varchar [not null]
+  planned_duration_min int
+  actual_duration_min int
+  status varchar [default: 'pending']
+}
+
+Table production_batch {
+  batch_id int [pk]
+  batch_number varchar [not null]
+  wo_id int [not null]
+  product_id int [not null]
+  quantity decimal [not null]
+  uom_id int [not null]
+  production_date timestamp [not null]
+  expiry_date date
+  status varchar [default: 'produced']
+}
+
+Table batch_ingredient_usage {
+  usage_id int [pk]
+  batch_id int [not null]
+  ingredient_id int [not null]
+  lot_id int
+  quantity_used decimal [not null]
+  uom_id int [not null]
+}
+
+Table equipment {
+  equipment_id int [pk]
+  equipment_name varchar [not null]
+  equipment_code varchar [not null]
+  equipment_type varchar
+  line_id int
+  factory_id int [not null]
+  manufacturer varchar
+  install_date date
+  status varchar [default: 'operational']
+}
+
+Table equipment_maintenance {
+  maintenance_id int [pk]
+  equipment_id int [not null]
+  maintenance_type varchar
+  scheduled_date date
+  completed_date date
+  technician_id int
+  duration_hours decimal
+  cost decimal
+  notes text
+  status varchar [default: 'scheduled']
+}
+
+Table oee_record {
+  oee_id int [pk]
+  line_id int [not null]
+  record_date date [not null]
+  shift_id int
+  availability decimal [not null]
+  performance decimal [not null]
+  quality decimal [not null]
+  oee_percentage decimal [not null]
+  planned_time_min int
+  actual_run_time_min int
+  ideal_cycle_time decimal
+  total_count int
+  good_count int
+}
+
+Table downtime_event {
+  downtime_id int [pk]
+  line_id int [not null]
+  equipment_id int
+  reason_id int [not null]
+  start_time timestamp [not null]
+  end_time timestamp
+  duration_min int
+  is_planned boolean [default: false]
+  reported_by int
+}
+
+Table downtime_reason {
+  downtime_reason_id int [pk]
+  reason_code varchar [not null]
+  reason_name varchar [not null]
+  category varchar
+  is_planned boolean [default: false]
+}
+
+// ─── DOMAIN 7: QUALITY CONTROL ───
+
+Table quality_parameter {
+  parameter_id int [pk]
+  parameter_name varchar [not null]
+  parameter_code varchar [not null]
+  parameter_type varchar
+  uom_id int
+  min_value decimal
+  max_value decimal
+}
+
+Table product_specification {
+  spec_id int [pk]
+  product_id int [not null]
+  parameter_id int [not null]
+  target_value decimal
+  lower_limit decimal
+  upper_limit decimal
+  is_critical boolean [default: false]
+}
+
+Table quality_inspection {
+  inspection_id int [pk]
+  inspection_type varchar [not null]
+  reference_type varchar
+  reference_id int
+  site_id int [not null]
+  inspector_id int
+  inspection_date timestamp [not null]
+  overall_result varchar
+  status varchar [default: 'in_progress']
+}
+
+Table inspection_result {
+  result_id int [pk]
+  inspection_id int [not null]
+  parameter_id int [not null]
+  measured_value decimal
+  result varchar
+  notes text
+}
+
+Table non_conformance {
+  nc_id int [pk]
+  nc_number varchar [not null]
+  inspection_id int
+  batch_id int
+  supplier_id int
+  nc_type varchar
+  severity varchar
+  description text [not null]
+  reported_date timestamp [not null]
+  reported_by int
+  root_cause text
+  disposition varchar
+  status varchar [default: 'open']
+}
+
+Table corrective_action {
+  action_id int [pk]
+  nc_id int [not null]
+  action_type varchar
+  description text [not null]
+  assigned_to int
+  due_date date
+  completion_date date
+  verification_date date
+  verified_by int
+  status varchar [default: 'open']
+}
+
+Table lab_test {
+  test_id int [pk]
+  test_number varchar [not null]
+  inspection_id int
+  sample_id varchar
+  lab_name varchar
+  requested_date timestamp [not null]
+  completed_date timestamp
+  status varchar [default: 'pending']
+}
+
+Table lab_test_result {
+  test_result_id int [pk]
+  test_id int [not null]
+  parameter_id int [not null]
+  result_value decimal
+  result_text varchar
+  pass_fail varchar
+}
+
+Table recall_event {
+  recall_id int [pk]
+  recall_number varchar [not null]
+  product_id int [not null]
+  batch_id int
+  recall_type varchar
+  recall_class varchar
+  reason text [not null]
+  initiated_date date [not null]
+  affected_qty decimal
+  regions_affected text
+  status varchar [default: 'initiated']
+  lead_id int
+}
+
+// ─── DOMAIN 8: LOGISTICS & COLD CHAIN ───
+
+Table carrier {
+  carrier_id int [pk]
+  carrier_name varchar [not null]
+  carrier_code varchar [not null]
+  carrier_type varchar
+  country_id int
+  is_cold_chain_certified boolean [default: false]
+  status varchar [default: 'active']
+}
+
+Table vehicle_type {
+  vehicle_type_id int [pk]
+  type_name varchar [not null]
+  is_refrigerated boolean [default: false]
+  max_payload_kg decimal
+  temp_min decimal
+  temp_max decimal
+}
+
+Table vehicle {
+  vehicle_id int [pk]
+  vehicle_code varchar [not null]
+  carrier_id int [not null]
+  vehicle_type_id int [not null]
+  license_plate varchar
+  gps_tracker_id varchar
+  last_maintenance date
+  status varchar [default: 'available']
+}
+
+Table route {
+  route_id int [pk]
+  route_name varchar [not null]
+  route_code varchar [not null]
+  origin_site_id int [not null]
+  dest_site_id int [not null]
+  distance_km decimal
+  est_duration_hrs decimal
+  is_cold_chain boolean [default: false]
+}
+
+Table route_waypoint {
+  waypoint_id int [pk]
+  route_id int [not null]
+  sequence_order int [not null]
+  site_id int
+  waypoint_name varchar
+  latitude decimal
+  longitude decimal
+  est_arrival_offset_hrs decimal
+}
+
+Table shipment {
+  shipment_id int [pk]
+  shipment_number varchar [not null]
+  po_id int
+  supplier_id int
+  carrier_id int [not null]
+  vehicle_id int
+  route_id int
+  origin_site_id int [not null]
+  dest_site_id int [not null]
+  ship_date timestamp
+  est_arrival timestamp
+  actual_arrival timestamp
+  status varchar [default: 'planned']
+  is_cold_chain boolean [default: false]
+}
+
+Table shipment_line {
+  shipment_line_id int [pk]
+  shipment_id int [not null]
+  material_id int [not null]
+  quantity decimal [not null]
+  uom_id int [not null]
+  po_line_id int
+  lot_number varchar
+}
+
+Table delivery {
+  delivery_id int [pk]
+  delivery_number varchar [not null]
+  shipment_id int
+  site_id int [not null]
+  delivery_date timestamp [not null]
+  received_by int
+  dock_id int
+  status varchar [default: 'scheduled']
+}
+
+Table delivery_line {
+  delivery_line_id int [pk]
+  delivery_id int [not null]
+  material_id int [not null]
+  expected_qty decimal
+  received_qty decimal
+  uom_id int [not null]
+  condition varchar [default: 'good']
+}
+
+Table loading_dock {
+  dock_id int [pk]
+  site_id int [not null]
+  dock_code varchar [not null]
+  dock_type varchar
+  is_refrigerated boolean [default: false]
+  status varchar [default: 'available']
+}
+
+Table temperature_reading {
+  reading_id int [pk]
+  vehicle_id int
+  shipment_id int
+  warehouse_id int
+  sensor_id varchar [not null]
+  temperature decimal [not null]
+  humidity decimal
+  reading_time timestamp [not null]
+  latitude decimal
+  longitude decimal
+  is_excursion boolean [default: false]
+}
+
+Table tracking_event {
+  event_id int [pk]
+  shipment_id int [not null]
+  event_type varchar
+  event_time timestamp [not null]
+  location_name varchar
+  latitude decimal
+  longitude decimal
+  notes varchar
+}
+
+Table freight_cost {
+  cost_id int [pk]
+  shipment_id int [not null]
+  carrier_id int [not null]
+  cost_type varchar
+  amount decimal [not null]
+  currency_id int
+  invoice_ref varchar
+}
+
+// ─── DOMAIN 9: ALERTS & MONITORING ───
+
+Table alert_rule {
+  rule_id int [pk]
+  rule_name varchar [not null]
+  rule_code varchar [not null]
+  domain varchar [not null]
+  condition_type varchar
+  metric varchar
+  operator varchar
+  threshold_value decimal
+  severity varchar [not null]
+  is_active boolean [default: true]
+  created_by int
+}
+
+Table alert {
+  alert_id int [pk]
+  rule_id int [not null]
+  alert_time timestamp [not null]
+  severity varchar [not null]
+  title varchar [not null]
+  message text [not null]
+  domain varchar [not null]
+  reference_type varchar
+  reference_id int
+  site_id int
+  current_value decimal
+  threshold_value decimal
+  status varchar [default: 'open']
+}
+
+Table alert_acknowledgment {
+  ack_id int [pk]
+  alert_id int [not null]
+  acknowledged_by int [not null]
+  ack_time timestamp [not null]
+  action_taken text
+  resolution text
+  resolved_time timestamp
+}
+
+Table alert_escalation {
+  escalation_id int [pk]
+  alert_id int [not null]
+  escalation_level int [not null]
+  escalated_to int [not null]
+  escalated_time timestamp [not null]
+  reason varchar
+}
+
+// ─── DOMAIN 10: KPIs, ANALYTICS & DEMAND ───
+
+Table kpi_definition {
+  kpi_id int [pk]
+  kpi_name varchar [not null]
+  kpi_code varchar [not null]
+  domain varchar
+  description text
+  uom_id int
+  aggregation varchar
+  direction varchar
+}
+
+Table kpi_target {
+  target_id int [pk]
+  kpi_id int [not null]
+  site_id int
+  period_id int [not null]
+  target_value decimal [not null]
+  stretch_value decimal
+  floor_value decimal
+}
+
+Table kpi_measurement {
+  measurement_id int [pk]
+  kpi_id int [not null]
+  site_id int
+  measured_date date [not null]
+  measured_value decimal [not null]
+  period_id int
+}
+
+Table dashboard_config {
+  config_id int [pk]
+  dashboard_name varchar [not null]
+  owner_id int [not null]
+  layout_json text
+  is_default boolean [default: false]
+  created_date timestamp [not null]
+  modified_date timestamp
+}
+
+Table customer {
+  customer_id int [pk]
+  customer_name varchar [not null]
+  customer_code varchar [not null]
+  customer_type varchar
+  country_id int [not null]
+  region_id int
+  credit_limit decimal
+  payment_terms varchar
+  status varchar [default: 'active']
+}
+
+Table sales_order {
+  order_id int [pk]
+  order_number varchar [not null]
+  customer_id int [not null]
+  order_date timestamp [not null]
+  requested_date date
+  ship_to_site int
+  total_amount decimal
+  currency_id int
+  priority varchar
+  status varchar [default: 'confirmed']
+}
+
+Table sales_order_line {
+  order_line_id int [pk]
+  order_id int [not null]
+  product_id int [not null]
+  variant_id int
+  quantity decimal [not null]
+  uom_id int [not null]
+  unit_price decimal
+  line_total decimal
+  line_number int [not null]
+}
+
+Table demand_forecast {
+  forecast_id int [pk]
+  forecast_name varchar [not null]
+  period_id int [not null]
+  created_by int
+  created_date timestamp [not null]
+  forecast_type varchar
+  status varchar [default: 'draft']
+}
+
+Table forecast_line {
+  forecast_line_id int [pk]
+  forecast_id int [not null]
+  product_id int [not null]
+  site_id int
+  region_id int
+  forecast_qty decimal [not null]
+  uom_id int [not null]
+  confidence decimal
+}
+
+// ============================================================================
+// RELATIONSHIPS
+// ============================================================================
+
+// ─── DOMAIN 1: MASTER DATA & REFERENCE ───
+
+Ref: region.parent_region_id > region.region_id
+Ref: country.region_id > region.region_id
+Ref: brand.parent_brand_id > brand.brand_id
+Ref: product_category.parent_category_id > product_category.category_id
+Ref: product.brand_id > brand.brand_id
+Ref: product.category_id > product_category.category_id
+Ref: product.base_uom_id > unit_of_measure.uom_id
+Ref: product_variant.product_id > product.product_id
+Ref: product_variant.weight_uom_id > unit_of_measure.uom_id
+Ref: ingredient.country_of_origin > country.country_id
+Ref: product_ingredient.product_id > product.product_id
+Ref: product_ingredient.ingredient_id > ingredient.ingredient_id
+Ref: regulatory_standard.country_id > country.country_id
+Ref: certification_type.standard_id > regulatory_standard.standard_id
+
+// ─── DOMAIN 2: ORGANIZATION & PERSONNEL ───
+
+Ref: business_unit.region_id > region.region_id
+Ref: business_unit.parent_bu_id > business_unit.bu_id
+Ref: site.bu_id > business_unit.bu_id
+Ref: site.country_id > country.country_id
+Ref: department.site_id > site.site_id
+Ref: department.parent_dept_id > department.department_id
+Ref: employee.department_id > department.department_id
+Ref: employee.role_id > role.role_id
+Ref: employee.manager_id > employee.employee_id
+Ref: team.lead_id > employee.employee_id
+Ref: team.site_id > site.site_id
+Ref: team_member.team_id > team.team_id
+Ref: team_member.employee_id > employee.employee_id
+
+// ─── DOMAIN 3: SUPPLIER MANAGEMENT ───
+
+Ref: supplier.tier_id > supplier_tier.tier_id
+Ref: supplier.country_id > country.country_id
+Ref: supplier_contact.supplier_id > supplier.supplier_id
+Ref: supplier_material.supplier_id > supplier.supplier_id
+Ref: supplier_material.ingredient_id > ingredient.ingredient_id
+Ref: supplier_material.currency_id > currency.currency_id
+Ref: supplier_contract.supplier_id > supplier.supplier_id
+Ref: supplier_contract.currency_id > currency.currency_id
+Ref: contract_line_item.contract_id > supplier_contract.contract_id
+Ref: contract_line_item.ingredient_id > ingredient.ingredient_id
+Ref: contract_line_item.uom_id > unit_of_measure.uom_id
+Ref: supplier_certification.supplier_id > supplier.supplier_id
+Ref: supplier_certification.cert_type_id > certification_type.cert_type_id
+Ref: supplier_audit.supplier_id > supplier.supplier_id
+Ref: supplier_audit.auditor_id > employee.employee_id
+Ref: supplier_risk_assessment.supplier_id > supplier.supplier_id
+Ref: supplier_risk_assessment.assessor_id > employee.employee_id
+Ref: supplier_performance.supplier_id > supplier.supplier_id
+Ref: supplier_performance.period_id > fiscal_period.period_id
+Ref: approved_supplier_list.supplier_id > supplier.supplier_id
+Ref: approved_supplier_list.ingredient_id > ingredient.ingredient_id
+Ref: approved_supplier_list.site_id > site.site_id
+Ref: approved_supplier_list.approved_by > employee.employee_id
+
+// ─── DOMAIN 4: PROCUREMENT ───
+
+Ref: purchase_requisition.requester_id > employee.employee_id
+Ref: purchase_requisition.site_id > site.site_id
+Ref: purchase_requisition_line.requisition_id > purchase_requisition.requisition_id
+Ref: purchase_requisition_line.ingredient_id > ingredient.ingredient_id
+Ref: purchase_requisition_line.uom_id > unit_of_measure.uom_id
+Ref: purchase_order.supplier_id > supplier.supplier_id
+Ref: purchase_order.contract_id > supplier_contract.contract_id
+Ref: purchase_order.site_id > site.site_id
+Ref: purchase_order.buyer_id > employee.employee_id
+Ref: purchase_order.currency_id > currency.currency_id
+Ref: purchase_order_line.po_id > purchase_order.po_id
+Ref: purchase_order_line.ingredient_id > ingredient.ingredient_id
+Ref: purchase_order_line.uom_id > unit_of_measure.uom_id
+Ref: goods_receipt.po_id > purchase_order.po_id
+Ref: goods_receipt.site_id > site.site_id
+Ref: goods_receipt.received_by > employee.employee_id
+Ref: goods_receipt_line.receipt_id > goods_receipt.receipt_id
+Ref: goods_receipt_line.po_line_id > purchase_order_line.po_line_id
+Ref: invoice.supplier_id > supplier.supplier_id
+Ref: invoice.po_id > purchase_order.po_id
+Ref: invoice.currency_id > currency.currency_id
+Ref: invoice_line.invoice_id > invoice.invoice_id
+Ref: invoice_line.po_line_id > purchase_order_line.po_line_id
+Ref: payment.invoice_id > invoice.invoice_id
+Ref: payment.currency_id > currency.currency_id
+
+// ─── DOMAIN 5: INVENTORY MANAGEMENT ───
+
+Ref: warehouse.site_id > site.site_id
+Ref: warehouse.capacity_uom > unit_of_measure.uom_id
+Ref: warehouse_zone.warehouse_id > warehouse.warehouse_id
+Ref: storage_location.zone_id > warehouse_zone.zone_id
+Ref: material_master.ingredient_id > ingredient.ingredient_id
+Ref: material_master.product_id > product.product_id
+Ref: material_master.base_uom_id > unit_of_measure.uom_id
+Ref: material_master.currency_id > currency.currency_id
+Ref: inventory_lot.material_id > material_master.material_id
+Ref: inventory_lot.location_id > storage_location.location_id
+Ref: inventory_lot.supplier_id > supplier.supplier_id
+Ref: inventory_lot.receipt_id > goods_receipt.receipt_id
+Ref: inventory_lot.uom_id > unit_of_measure.uom_id
+Ref: stock_level.material_id > material_master.material_id
+Ref: stock_level.site_id > site.site_id
+Ref: stock_level.uom_id > unit_of_measure.uom_id
+Ref: safety_stock_config.material_id > material_master.material_id
+Ref: safety_stock_config.site_id > site.site_id
+Ref: safety_stock_config.uom_id > unit_of_measure.uom_id
+Ref: reorder_point_config.material_id > material_master.material_id
+Ref: reorder_point_config.site_id > site.site_id
+Ref: reorder_point_config.uom_id > unit_of_measure.uom_id
+Ref: inventory_transaction.material_id > material_master.material_id
+Ref: inventory_transaction.lot_id > inventory_lot.lot_id
+Ref: inventory_transaction.site_id > site.site_id
+Ref: inventory_transaction.uom_id > unit_of_measure.uom_id
+Ref: inventory_transaction.created_by > employee.employee_id
+Ref: cycle_count.warehouse_id > warehouse.warehouse_id
+Ref: cycle_count.initiated_by > employee.employee_id
+Ref: cycle_count_line.count_id > cycle_count.count_id
+Ref: cycle_count_line.material_id > material_master.material_id
+Ref: cycle_count_line.location_id > storage_location.location_id
+Ref: cycle_count_line.counted_by > employee.employee_id
+
+// ─── DOMAIN 6: PRODUCTION & MANUFACTURING ───
+
+Ref: factory.site_id > site.site_id
+Ref: factory.capacity_uom_id > unit_of_measure.uom_id
+Ref: production_line.factory_id > factory.factory_id
+Ref: production_line.throughput_uom > unit_of_measure.uom_id
+Ref: line_product_capability.line_id > production_line.line_id
+Ref: line_product_capability.product_id > product.product_id
+Ref: production_shift.factory_id > factory.factory_id
+Ref: production_schedule.line_id > production_line.line_id
+Ref: production_schedule.product_id > product.product_id
+Ref: production_schedule.shift_id > production_shift.shift_id
+Ref: production_schedule.uom_id > unit_of_measure.uom_id
+Ref: work_order.schedule_id > production_schedule.schedule_id
+Ref: work_order.line_id > production_line.line_id
+Ref: work_order.product_id > product.product_id
+Ref: work_order.uom_id > unit_of_measure.uom_id
+Ref: work_order.supervisor_id > employee.employee_id
+Ref: work_order_step.wo_id > work_order.wo_id
+Ref: production_batch.wo_id > work_order.wo_id
+Ref: production_batch.product_id > product.product_id
+Ref: production_batch.uom_id > unit_of_measure.uom_id
+Ref: batch_ingredient_usage.batch_id > production_batch.batch_id
+Ref: batch_ingredient_usage.ingredient_id > ingredient.ingredient_id
+Ref: batch_ingredient_usage.lot_id > inventory_lot.lot_id
+Ref: batch_ingredient_usage.uom_id > unit_of_measure.uom_id
+Ref: equipment.line_id > production_line.line_id
+Ref: equipment.factory_id > factory.factory_id
+Ref: equipment_maintenance.equipment_id > equipment.equipment_id
+Ref: equipment_maintenance.technician_id > employee.employee_id
+Ref: oee_record.line_id > production_line.line_id
+Ref: oee_record.shift_id > production_shift.shift_id
+Ref: downtime_event.line_id > production_line.line_id
+Ref: downtime_event.equipment_id > equipment.equipment_id
+Ref: downtime_event.reason_id > downtime_reason.downtime_reason_id
+Ref: downtime_event.reported_by > employee.employee_id
+
+// ─── DOMAIN 7: QUALITY CONTROL ───
+
+Ref: quality_parameter.uom_id > unit_of_measure.uom_id
+Ref: product_specification.product_id > product.product_id
+Ref: product_specification.parameter_id > quality_parameter.parameter_id
+Ref: quality_inspection.site_id > site.site_id
+Ref: quality_inspection.inspector_id > employee.employee_id
+Ref: inspection_result.inspection_id > quality_inspection.inspection_id
+Ref: inspection_result.parameter_id > quality_parameter.parameter_id
+Ref: non_conformance.inspection_id > quality_inspection.inspection_id
+Ref: non_conformance.batch_id > production_batch.batch_id
+Ref: non_conformance.supplier_id > supplier.supplier_id
+Ref: non_conformance.reported_by > employee.employee_id
+Ref: corrective_action.nc_id > non_conformance.nc_id
+Ref: corrective_action.assigned_to > employee.employee_id
+Ref: corrective_action.verified_by > employee.employee_id
+Ref: lab_test.inspection_id > quality_inspection.inspection_id
+Ref: lab_test_result.test_id > lab_test.test_id
+Ref: lab_test_result.parameter_id > quality_parameter.parameter_id
+Ref: recall_event.product_id > product.product_id
+Ref: recall_event.batch_id > production_batch.batch_id
+Ref: recall_event.lead_id > employee.employee_id
+
+// ─── DOMAIN 8: LOGISTICS & COLD CHAIN ───
+
+Ref: carrier.country_id > country.country_id
+Ref: vehicle.carrier_id > carrier.carrier_id
+Ref: vehicle.vehicle_type_id > vehicle_type.vehicle_type_id
+Ref: route.origin_site_id > site.site_id
+Ref: route.dest_site_id > site.site_id
+Ref: route_waypoint.route_id > route.route_id
+Ref: route_waypoint.site_id > site.site_id
+Ref: shipment.po_id > purchase_order.po_id
+Ref: shipment.supplier_id > supplier.supplier_id
+Ref: shipment.carrier_id > carrier.carrier_id
+Ref: shipment.vehicle_id > vehicle.vehicle_id
+Ref: shipment.route_id > route.route_id
+Ref: shipment.origin_site_id > site.site_id
+Ref: shipment.dest_site_id > site.site_id
+Ref: shipment_line.shipment_id > shipment.shipment_id
+Ref: shipment_line.material_id > material_master.material_id
+Ref: shipment_line.uom_id > unit_of_measure.uom_id
+Ref: shipment_line.po_line_id > purchase_order_line.po_line_id
+Ref: delivery.shipment_id > shipment.shipment_id
+Ref: delivery.site_id > site.site_id
+Ref: delivery.received_by > employee.employee_id
+Ref: delivery.dock_id > loading_dock.dock_id
+Ref: delivery_line.delivery_id > delivery.delivery_id
+Ref: delivery_line.material_id > material_master.material_id
+Ref: delivery_line.uom_id > unit_of_measure.uom_id
+Ref: loading_dock.site_id > site.site_id
+Ref: temperature_reading.vehicle_id > vehicle.vehicle_id
+Ref: temperature_reading.shipment_id > shipment.shipment_id
+Ref: temperature_reading.warehouse_id > warehouse.warehouse_id
+Ref: tracking_event.shipment_id > shipment.shipment_id
+Ref: freight_cost.shipment_id > shipment.shipment_id
+Ref: freight_cost.carrier_id > carrier.carrier_id
+Ref: freight_cost.currency_id > currency.currency_id
+
+// ─── DOMAIN 9: ALERTS & MONITORING ───
+
+Ref: alert_rule.created_by > employee.employee_id
+Ref: alert.rule_id > alert_rule.rule_id
+Ref: alert.site_id > site.site_id
+Ref: alert_acknowledgment.alert_id > alert.alert_id
+Ref: alert_acknowledgment.acknowledged_by > employee.employee_id
+Ref: alert_escalation.alert_id > alert.alert_id
+Ref: alert_escalation.escalated_to > employee.employee_id
+
+// ─── DOMAIN 10: KPIs, ANALYTICS & DEMAND ───
+
+Ref: kpi_definition.uom_id > unit_of_measure.uom_id
+Ref: kpi_target.kpi_id > kpi_definition.kpi_id
+Ref: kpi_target.site_id > site.site_id
+Ref: kpi_target.period_id > fiscal_period.period_id
+Ref: kpi_measurement.kpi_id > kpi_definition.kpi_id
+Ref: kpi_measurement.site_id > site.site_id
+Ref: kpi_measurement.period_id > fiscal_period.period_id
+Ref: dashboard_config.owner_id > employee.employee_id
+Ref: customer.country_id > country.country_id
+Ref: customer.region_id > region.region_id
+Ref: sales_order.customer_id > customer.customer_id
+Ref: sales_order.ship_to_site > site.site_id
+Ref: sales_order.currency_id > currency.currency_id
+Ref: sales_order_line.order_id > sales_order.order_id
+Ref: sales_order_line.product_id > product.product_id
+Ref: sales_order_line.variant_id > product_variant.variant_id
+Ref: sales_order_line.uom_id > unit_of_measure.uom_id
+Ref: demand_forecast.period_id > fiscal_period.period_id
+Ref: demand_forecast.created_by > employee.employee_id
+Ref: forecast_line.forecast_id > demand_forecast.forecast_id
+Ref: forecast_line.product_id > product.product_id
+Ref: forecast_line.site_id > site.site_id
+Ref: forecast_line.region_id > region.region_id
+Ref: forecast_line.uom_id > unit_of_measure.uom_id

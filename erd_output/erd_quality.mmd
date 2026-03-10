@@ -1,0 +1,132 @@
+erDiagram
+    supplier {}
+    production_batch {}
+    employee {}
+    site {}
+    product {}
+    unit_of_measure {}
+    quality_parameter {
+        INT parameter_id "PK"
+        VARCHAR parameter_name
+        VARCHAR parameter_code
+        VARCHAR parameter_type
+        INT uom_id "FK"
+        DECIMAL min_value
+        DECIMAL max_value
+    }
+
+    product_specification {
+        INT spec_id "PK"
+        INT product_id "FK"
+        INT parameter_id "FK"
+        DECIMAL target_value
+        DECIMAL lower_limit
+        DECIMAL upper_limit
+        BOOLEAN is_critical
+    }
+
+    quality_inspection {
+        INT inspection_id "PK"
+        VARCHAR inspection_type
+        VARCHAR reference_type
+        INT reference_id
+        INT site_id "FK"
+        INT inspector_id "FK"
+        TIMESTAMP inspection_date
+        VARCHAR overall_result
+        VARCHAR status
+    }
+
+    inspection_result {
+        INT result_id "PK"
+        INT inspection_id "FK"
+        INT parameter_id "FK"
+        DECIMAL measured_value
+        VARCHAR result
+        TEXT notes
+    }
+
+    non_conformance {
+        INT nc_id "PK"
+        VARCHAR nc_number
+        INT inspection_id "FK"
+        INT batch_id "FK"
+        INT supplier_id "FK"
+        VARCHAR nc_type
+        VARCHAR severity
+        TEXT description
+        TIMESTAMP reported_date
+        INT reported_by "FK"
+        TEXT root_cause
+        VARCHAR disposition
+        VARCHAR status
+    }
+
+    corrective_action {
+        INT action_id "PK"
+        INT nc_id "FK"
+        VARCHAR action_type
+        TEXT description
+        INT assigned_to "FK"
+        DATE due_date
+        DATE completion_date
+        DATE verification_date
+        INT verified_by "FK"
+        VARCHAR status
+    }
+
+    lab_test {
+        INT test_id "PK"
+        VARCHAR test_number
+        INT inspection_id "FK"
+        VARCHAR sample_id
+        VARCHAR lab_name
+        TIMESTAMP requested_date
+        TIMESTAMP completed_date
+        VARCHAR status
+    }
+
+    lab_test_result {
+        INT test_result_id "PK"
+        INT test_id "FK"
+        INT parameter_id "FK"
+        DECIMAL result_value
+        VARCHAR result_text
+        VARCHAR pass_fail
+    }
+
+    recall_event {
+        INT recall_id "PK"
+        VARCHAR recall_number
+        INT product_id "FK"
+        INT batch_id "FK"
+        VARCHAR recall_type
+        VARCHAR recall_class
+        TEXT reason
+        DATE initiated_date
+        DECIMAL affected_qty
+        TEXT regions_affected
+        VARCHAR status
+        INT lead_id "FK"
+    }
+
+    %% Relationships
+    unit_of_measure ||--o{ quality_parameter : "uom_id"
+    product ||--o{ product_specification : "product_id"
+    quality_parameter ||--o{ product_specification : "parameter_id"
+    site ||--o{ quality_inspection : "site_id"
+    employee ||--o{ quality_inspection : "inspector_id"
+    quality_inspection ||--o{ inspection_result : "inspection_id"
+    quality_parameter ||--o{ inspection_result : "parameter_id"
+    quality_inspection ||--o{ non_conformance : "inspection_id"
+    production_batch ||--o{ non_conformance : "batch_id"
+    supplier ||--o{ non_conformance : "supplier_id"
+    employee ||--o{ non_conformance : "reported_by"
+    non_conformance ||--o{ corrective_action : "nc_id"
+    employee ||--o{ corrective_action : "assigned_to"
+    quality_inspection ||--o{ lab_test : "inspection_id"
+    lab_test ||--o{ lab_test_result : "test_id"
+    quality_parameter ||--o{ lab_test_result : "parameter_id"
+    product ||--o{ recall_event : "product_id"
+    production_batch ||--o{ recall_event : "batch_id"
+    employee ||--o{ recall_event : "lead_id"

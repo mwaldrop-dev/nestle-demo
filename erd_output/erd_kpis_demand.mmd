@@ -1,0 +1,133 @@
+erDiagram
+    product_variant {}
+    product {}
+    currency {}
+    region {}
+    country {}
+    employee {}
+    fiscal_period {}
+    site {}
+    unit_of_measure {}
+    kpi_definition {
+        INT kpi_id "PK"
+        VARCHAR kpi_name
+        VARCHAR kpi_code
+        VARCHAR domain
+        TEXT description
+        INT uom_id "FK"
+        VARCHAR aggregation
+        VARCHAR direction
+    }
+
+    kpi_target {
+        INT target_id "PK"
+        INT kpi_id "FK"
+        INT site_id "FK"
+        INT period_id "FK"
+        DECIMAL target_value
+        DECIMAL stretch_value
+        DECIMAL floor_value
+    }
+
+    kpi_measurement {
+        INT measurement_id "PK"
+        INT kpi_id "FK"
+        INT site_id "FK"
+        DATE measured_date
+        DECIMAL measured_value
+        INT period_id "FK"
+    }
+
+    dashboard_config {
+        INT config_id "PK"
+        VARCHAR dashboard_name
+        INT owner_id "FK"
+        TEXT layout_json
+        BOOLEAN is_default
+        TIMESTAMP created_date
+        TIMESTAMP modified_date
+    }
+
+    customer {
+        INT customer_id "PK"
+        VARCHAR customer_name
+        VARCHAR customer_code
+        VARCHAR customer_type
+        INT country_id "FK"
+        INT region_id "FK"
+        DECIMAL credit_limit
+        VARCHAR payment_terms
+        VARCHAR status
+    }
+
+    sales_order {
+        INT order_id "PK"
+        VARCHAR order_number
+        INT customer_id "FK"
+        TIMESTAMP order_date
+        DATE requested_date
+        INT ship_to_site "FK"
+        DECIMAL total_amount
+        INT currency_id "FK"
+        VARCHAR priority
+        VARCHAR status
+    }
+
+    sales_order_line {
+        INT order_line_id "PK"
+        INT order_id "FK"
+        INT product_id "FK"
+        INT variant_id "FK"
+        DECIMAL quantity
+        INT uom_id "FK"
+        DECIMAL unit_price
+        DECIMAL line_total
+        INT line_number
+    }
+
+    demand_forecast {
+        INT forecast_id "PK"
+        VARCHAR forecast_name
+        INT period_id "FK"
+        INT created_by "FK"
+        TIMESTAMP created_date
+        VARCHAR forecast_type
+        VARCHAR status
+    }
+
+    forecast_line {
+        INT forecast_line_id "PK"
+        INT forecast_id "FK"
+        INT product_id "FK"
+        INT site_id "FK"
+        INT region_id "FK"
+        DECIMAL forecast_qty
+        INT uom_id "FK"
+        DECIMAL confidence
+    }
+
+    %% Relationships
+    unit_of_measure ||--o{ kpi_definition : "uom_id"
+    kpi_definition ||--o{ kpi_target : "kpi_id"
+    site ||--o{ kpi_target : "site_id"
+    fiscal_period ||--o{ kpi_target : "period_id"
+    kpi_definition ||--o{ kpi_measurement : "kpi_id"
+    site ||--o{ kpi_measurement : "site_id"
+    fiscal_period ||--o{ kpi_measurement : "period_id"
+    employee ||--o{ dashboard_config : "owner_id"
+    country ||--o{ customer : "country_id"
+    region ||--o{ customer : "region_id"
+    customer ||--o{ sales_order : "customer_id"
+    site ||--o{ sales_order : "ship_to_site"
+    currency ||--o{ sales_order : "currency_id"
+    sales_order ||--o{ sales_order_line : "order_id"
+    product ||--o{ sales_order_line : "product_id"
+    product_variant ||--o{ sales_order_line : "variant_id"
+    unit_of_measure ||--o{ sales_order_line : "uom_id"
+    fiscal_period ||--o{ demand_forecast : "period_id"
+    employee ||--o{ demand_forecast : "created_by"
+    demand_forecast ||--o{ forecast_line : "forecast_id"
+    product ||--o{ forecast_line : "product_id"
+    site ||--o{ forecast_line : "site_id"
+    region ||--o{ forecast_line : "region_id"
+    unit_of_measure ||--o{ forecast_line : "uom_id"

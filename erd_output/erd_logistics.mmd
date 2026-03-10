@@ -1,0 +1,187 @@
+erDiagram
+    currency {}
+    warehouse {}
+    employee {}
+    purchase_order_line {}
+    unit_of_measure {}
+    material_master {}
+    supplier {}
+    purchase_order {}
+    site {}
+    country {}
+    carrier {
+        INT carrier_id "PK"
+        VARCHAR carrier_name
+        VARCHAR carrier_code
+        VARCHAR carrier_type
+        INT country_id "FK"
+        BOOLEAN is_cold_chain_certified
+        VARCHAR status
+    }
+
+    vehicle_type {
+        INT vehicle_type_id "PK"
+        VARCHAR type_name
+        BOOLEAN is_refrigerated
+        DECIMAL max_payload_kg
+        DECIMAL temp_min
+        DECIMAL temp_max
+    }
+
+    vehicle {
+        INT vehicle_id "PK"
+        VARCHAR vehicle_code
+        INT carrier_id "FK"
+        INT vehicle_type_id "FK"
+        VARCHAR license_plate
+        VARCHAR gps_tracker_id
+        DATE last_maintenance
+        VARCHAR status
+    }
+
+    route {
+        INT route_id "PK"
+        VARCHAR route_name
+        VARCHAR route_code
+        INT origin_site_id "FK"
+        INT dest_site_id "FK"
+        DECIMAL distance_km
+        DECIMAL est_duration_hrs
+        BOOLEAN is_cold_chain
+    }
+
+    route_waypoint {
+        INT waypoint_id "PK"
+        INT route_id "FK"
+        INT sequence_order
+        INT site_id "FK"
+        VARCHAR waypoint_name
+        DECIMAL latitude
+        DECIMAL longitude
+        DECIMAL est_arrival_offset_hrs
+    }
+
+    shipment {
+        INT shipment_id "PK"
+        VARCHAR shipment_number
+        INT po_id "FK"
+        INT supplier_id "FK"
+        INT carrier_id "FK"
+        INT vehicle_id "FK"
+        INT route_id "FK"
+        INT origin_site_id "FK"
+        INT dest_site_id "FK"
+        TIMESTAMP ship_date
+        TIMESTAMP est_arrival
+        TIMESTAMP actual_arrival
+        VARCHAR status
+        BOOLEAN is_cold_chain
+    }
+
+    shipment_line {
+        INT shipment_line_id "PK"
+        INT shipment_id "FK"
+        INT material_id "FK"
+        DECIMAL quantity
+        INT uom_id "FK"
+        INT po_line_id "FK"
+        VARCHAR lot_number
+    }
+
+    delivery {
+        INT delivery_id "PK"
+        VARCHAR delivery_number
+        INT shipment_id "FK"
+        INT site_id "FK"
+        TIMESTAMP delivery_date
+        INT received_by "FK"
+        INT dock_id "FK"
+        VARCHAR status
+    }
+
+    delivery_line {
+        INT delivery_line_id "PK"
+        INT delivery_id "FK"
+        INT material_id "FK"
+        DECIMAL expected_qty
+        DECIMAL received_qty
+        INT uom_id "FK"
+        VARCHAR condition
+    }
+
+    loading_dock {
+        INT dock_id "PK"
+        INT site_id "FK"
+        VARCHAR dock_code
+        VARCHAR dock_type
+        BOOLEAN is_refrigerated
+        VARCHAR status
+    }
+
+    temperature_reading {
+        INT reading_id "PK"
+        INT vehicle_id "FK"
+        INT shipment_id "FK"
+        INT warehouse_id "FK"
+        VARCHAR sensor_id
+        DECIMAL temperature
+        DECIMAL humidity
+        TIMESTAMP reading_time
+        DECIMAL latitude
+        DECIMAL longitude
+        BOOLEAN is_excursion
+    }
+
+    tracking_event {
+        INT event_id "PK"
+        INT shipment_id "FK"
+        VARCHAR event_type
+        TIMESTAMP event_time
+        VARCHAR location_name
+        DECIMAL latitude
+        DECIMAL longitude
+        VARCHAR notes
+    }
+
+    freight_cost {
+        INT cost_id "PK"
+        INT shipment_id "FK"
+        INT carrier_id "FK"
+        VARCHAR cost_type
+        DECIMAL amount
+        INT currency_id "FK"
+        VARCHAR invoice_ref
+    }
+
+    %% Relationships
+    country ||--o{ carrier : "country_id"
+    carrier ||--o{ vehicle : "carrier_id"
+    vehicle_type ||--o{ vehicle : "vehicle_type_id"
+    site ||--o{ route : "origin_site_id"
+    route ||--o{ route_waypoint : "route_id"
+    site ||--o{ route_waypoint : "site_id"
+    purchase_order ||--o{ shipment : "po_id"
+    supplier ||--o{ shipment : "supplier_id"
+    carrier ||--o{ shipment : "carrier_id"
+    vehicle ||--o{ shipment : "vehicle_id"
+    route ||--o{ shipment : "route_id"
+    site ||--o{ shipment : "origin_site_id"
+    shipment ||--o{ shipment_line : "shipment_id"
+    material_master ||--o{ shipment_line : "material_id"
+    unit_of_measure ||--o{ shipment_line : "uom_id"
+    purchase_order_line ||--o{ shipment_line : "po_line_id"
+    shipment ||--o{ delivery : "shipment_id"
+    site ||--o{ delivery : "site_id"
+    employee ||--o{ delivery : "received_by"
+    loading_dock ||--o{ delivery : "dock_id"
+    delivery ||--o{ delivery_line : "delivery_id"
+    material_master ||--o{ delivery_line : "material_id"
+    unit_of_measure ||--o{ delivery_line : "uom_id"
+    site ||--o{ loading_dock : "site_id"
+    vehicle ||--o{ temperature_reading : "vehicle_id"
+    shipment ||--o{ temperature_reading : "shipment_id"
+    warehouse ||--o{ temperature_reading : "warehouse_id"
+    shipment ||--o{ tracking_event : "shipment_id"
+    shipment ||--o{ freight_cost : "shipment_id"
+    carrier ||--o{ freight_cost : "carrier_id"
+    currency ||--o{ freight_cost : "currency_id"

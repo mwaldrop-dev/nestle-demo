@@ -1,0 +1,202 @@
+erDiagram
+    recall_event {}
+    non_conformance {}
+    inventory_lot {}
+    ingredient {}
+    employee {}
+    product {}
+    unit_of_measure {}
+    site {}
+    factory {
+        INT factory_id "PK"
+        INT site_id "FK"
+        VARCHAR factory_code
+        INT total_lines
+        DECIMAL max_capacity
+        INT capacity_uom_id "FK"
+        DECIMAL operating_hours
+    }
+
+    production_line {
+        INT line_id "PK"
+        INT factory_id "FK"
+        VARCHAR line_name
+        VARCHAR line_code
+        VARCHAR line_type
+        DECIMAL max_throughput
+        INT throughput_uom "FK"
+        VARCHAR status
+    }
+
+    line_product_capability {
+        INT capability_id "PK"
+        INT line_id "FK"
+        INT product_id "FK"
+        INT changeover_minutes
+        DECIMAL std_throughput
+    }
+
+    production_shift {
+        INT shift_id "PK"
+        INT factory_id "FK"
+        VARCHAR shift_name
+        TIME start_time
+        TIME end_time
+        VARCHAR shift_type
+    }
+
+    production_schedule {
+        INT schedule_id "PK"
+        INT line_id "FK"
+        INT product_id "FK"
+        INT shift_id "FK"
+        DATE scheduled_date
+        DECIMAL planned_qty
+        INT uom_id "FK"
+        VARCHAR status
+    }
+
+    work_order {
+        INT wo_id "PK"
+        VARCHAR wo_number
+        INT schedule_id "FK"
+        INT line_id "FK"
+        INT product_id "FK"
+        DECIMAL planned_qty
+        DECIMAL actual_qty
+        INT uom_id "FK"
+        TIMESTAMP start_time
+        TIMESTAMP end_time
+        VARCHAR status
+        INT supervisor_id "FK"
+    }
+
+    work_order_step {
+        INT step_id "PK"
+        INT wo_id "FK"
+        INT step_number
+        VARCHAR step_name
+        INT planned_duration_min
+        INT actual_duration_min
+        VARCHAR status
+    }
+
+    production_batch {
+        INT batch_id "PK"
+        VARCHAR batch_number
+        INT wo_id "FK"
+        INT product_id "FK"
+        DECIMAL quantity
+        INT uom_id "FK"
+        TIMESTAMP production_date
+        DATE expiry_date
+        VARCHAR status
+    }
+
+    batch_ingredient_usage {
+        INT usage_id "PK"
+        INT batch_id "FK"
+        INT ingredient_id "FK"
+        INT lot_id "FK"
+        DECIMAL quantity_used
+        INT uom_id "FK"
+    }
+
+    equipment {
+        INT equipment_id "PK"
+        VARCHAR equipment_name
+        VARCHAR equipment_code
+        VARCHAR equipment_type
+        INT line_id "FK"
+        INT factory_id "FK"
+        VARCHAR manufacturer
+        DATE install_date
+        VARCHAR status
+    }
+
+    equipment_maintenance {
+        INT maintenance_id "PK"
+        INT equipment_id "FK"
+        VARCHAR maintenance_type
+        DATE scheduled_date
+        DATE completed_date
+        INT technician_id "FK"
+        DECIMAL duration_hours
+        DECIMAL cost
+        TEXT notes
+        VARCHAR status
+    }
+
+    oee_record {
+        INT oee_id "PK"
+        INT line_id "FK"
+        DATE record_date
+        INT shift_id "FK"
+        DECIMAL availability
+        DECIMAL performance
+        DECIMAL quality
+        DECIMAL oee_percentage
+        INT planned_time_min
+        INT actual_run_time_min
+        DECIMAL ideal_cycle_time
+        INT total_count
+        INT good_count
+    }
+
+    downtime_event {
+        INT downtime_id "PK"
+        INT line_id "FK"
+        INT equipment_id "FK"
+        INT reason_id "FK"
+        TIMESTAMP start_time
+        TIMESTAMP end_time
+        INT duration_min
+        BOOLEAN is_planned
+        INT reported_by "FK"
+    }
+
+    downtime_reason {
+        INT downtime_reason_id "PK"
+        VARCHAR reason_code
+        VARCHAR reason_name
+        VARCHAR category
+        BOOLEAN is_planned
+    }
+
+    %% Relationships
+    site ||--o{ factory : "site_id"
+    unit_of_measure ||--o{ factory : "capacity_uom_id"
+    factory ||--o{ production_line : "factory_id"
+    unit_of_measure ||--o{ production_line : "throughput_uom"
+    production_line ||--o{ line_product_capability : "line_id"
+    product ||--o{ line_product_capability : "product_id"
+    factory ||--o{ production_shift : "factory_id"
+    production_line ||--o{ production_schedule : "line_id"
+    product ||--o{ production_schedule : "product_id"
+    production_shift ||--o{ production_schedule : "shift_id"
+    unit_of_measure ||--o{ production_schedule : "uom_id"
+    production_schedule ||--o{ work_order : "schedule_id"
+    production_line ||--o{ work_order : "line_id"
+    product ||--o{ work_order : "product_id"
+    unit_of_measure ||--o{ work_order : "uom_id"
+    employee ||--o{ work_order : "supervisor_id"
+    work_order ||--o{ work_order_step : "wo_id"
+    work_order ||--o{ production_batch : "wo_id"
+    product ||--o{ production_batch : "product_id"
+    unit_of_measure ||--o{ production_batch : "uom_id"
+    production_batch ||--o{ batch_ingredient_usage : "batch_id"
+    ingredient ||--o{ batch_ingredient_usage : "ingredient_id"
+    inventory_lot ||--o{ batch_ingredient_usage : "lot_id"
+    unit_of_measure ||--o{ batch_ingredient_usage : "uom_id"
+    production_line ||--o{ equipment : "line_id"
+    factory ||--o{ equipment : "factory_id"
+    equipment ||--o{ equipment_maintenance : "equipment_id"
+    employee ||--o{ equipment_maintenance : "technician_id"
+    production_line ||--o{ oee_record : "line_id"
+    production_shift ||--o{ oee_record : "shift_id"
+    production_line ||--o{ downtime_event : "line_id"
+    equipment ||--o{ downtime_event : "equipment_id"
+    downtime_reason ||--o{ downtime_event : "reason_id"
+    employee ||--o{ downtime_event : "reported_by"
+    production_batch ||--o{ non_conformance : "batch_id"
+    production_batch ||--o{ recall_event : "batch_id"
