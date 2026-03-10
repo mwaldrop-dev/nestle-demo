@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import html2canvas from "html2canvas";
 
 /* ─── Design tokens (same as dashboard) ────────────────────────────── */
@@ -289,10 +289,213 @@ function ExportButtons({ targetRef, filename }) {
   );
 }
 
+/* ─── Data flow animation for ERD ──────────────────────────────────── */
+const ANIMATION_CSS = `
+@keyframes erd-entity-glow {
+  0%, 100% { filter: none; }
+  50% { filter: drop-shadow(0 0 16px ${T.primary}) drop-shadow(0 0 8px ${T.primary}); }
+}
+@keyframes erd-line-glow {
+  0%   { stroke: #5A7A9A; stroke-width: 1px; }
+  50%  { stroke: ${T.primary}; stroke-width: 2.5px; }
+  100% { stroke: #5A7A9A; stroke-width: 1px; }
+}
+@keyframes erd-dot-pulse {
+  0%, 100% { r: 12; opacity: 0.9; }
+  50% { r: 18; opacity: 1; }
+}
+.erd-entity-active { animation: erd-entity-glow 1.2s ease-in-out; }
+.erd-line-active { stroke: ${T.primary} !important; stroke-width: 3px !important;
+  filter: drop-shadow(0 0 8px ${T.primary}); }
+`;
+
+const GLOW_FILTER = `
+<filter id="data-flow-glow" x="-50%" y="-50%" width="200%" height="200%">
+  <feGaussianBlur stdDeviation="3" result="blur"/>
+  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>`;
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function easeInOut(t) {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+function parseRelationships(svgEl) {
+  const paths = svgEl.querySelectorAll("path.relationshipLine");
+  const rels = [];
+  paths.forEach(p => {
+    const id = p.getAttribute("id") || "";
+    // ID format: id_entity-SOURCE-N_entity-TARGET-M_SEQ
+    const m = id.match(/^id_(entity-[^_]+(?:_[^_]+)*-\d+)_(entity-[^_]+(?:_[^_]+)*-\d+)_(\d+)$/);
+    if (m) rels.push({ pathId: id, sourceId: m[1], targetId: m[2] });
+  });
+  return rels;
+}
+
+function animateDot(pathEl, svgEl, duration) {
+  return new Promise(resolve => {
+    const ns = "http://www.w3.org/2000/svg";
+    const totalLen = pathEl.getTotalLength();
+    const dot = document.createElementNS(ns, "circle");
+    dot.setAttribute("r", "14");
+    dot.setAttribute("fill", T.primary);
+    dot.setAttribute("filter", "url(#data-flow-glow)");
+    dot.setAttribute("data-flow-dot", "");
+    dot.style.animation = "erd-dot-pulse 0.6s ease-in-out infinite";
+    const trail = document.createElementNS(ns, "circle");
+    trail.setAttribute("r", "24");
+    trail.setAttribute("fill", "none");
+    trail.setAttribute("stroke", T.primary);
+    trail.setAttribute("stroke-width", "3");
+    trail.setAttribute("opacity", "0.3");
+    trail.setAttribute("data-flow-dot", "");
+    svgEl.appendChild(trail);
+    svgEl.appendChild(dot);
+
+    const start = performance.now();
+    function step(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = easeInOut(progress);
+      const pt = pathEl.getPointAtLength(eased * totalLen);
+      dot.setAttribute("cx", pt.x);
+      dot.setAttribute("cy", pt.y);
+      const trailPt = pathEl.getPointAtLength(Math.max(0, eased - 0.06) * totalLen);
+      trail.setAttribute("cx", trailPt.x);
+      trail.setAttribute("cy", trailPt.y);
+      if (progress < 1) requestAnimationFrame(step);
+      else { dot.remove(); trail.remove(); resolve(); }
+    }
+    requestAnimationFrame(step);
+  });
+}
+
+function highlightEntity(entityId, svgEl) {
+  const g = svgEl.querySelector(`[id="${entityId}"]`);
+  if (!g) return;
+  g.classList.add("erd-entity-active");
+  // Flash random attribute rows
+  const rows = g.querySelectorAll('g[class*="row-rect"]');
+  const arr = Array.from(rows).sort(() => Math.random() - 0.5).slice(0, 3);
+  arr.forEach((row, i) => {
+    setTimeout(() => {
+      const fill = row.querySelector("path[fill], rect[fill]");
+      if (fill) {
+        const orig = fill.getAttribute("fill");
+        fill.setAttribute("fill", "rgba(59,158,255,0.18)");
+        setTimeout(() => fill.setAttribute("fill", orig), 500);
+      }
+    }, i * 120);
+  });
+}
+
+function unhighlightEntity(entityId, svgEl) {
+  const g = svgEl.querySelector(`[id="${entityId}"]`);
+  if (g) g.classList.remove("erd-entity-active");
+}
+
+function useDataFlowAnimation(containerRef, svgReady, isAnimating) {
+  const cancelRef = useRef(true);
+
+  useEffect(() => {
+    if (!svgReady || !isAnimating) { cancelRef.current = true; return; }
+    cancelRef.current = false;
+    const container = containerRef.current;
+    if (!container) return;
+    const svgEl = container.querySelector("svg");
+    if (!svgEl) return;
+
+    const rels = parseRelationships(svgEl);
+    if (!rels.length) return;
+
+    let idx = 0;
+    async function run() {
+      while (!cancelRef.current) {
+        const rel = rels[idx % rels.length];
+        const pathEl = svgEl.querySelector(`[id="${rel.pathId}"]`);
+
+        // Phase 1: highlight source
+        highlightEntity(rel.sourceId, svgEl);
+        await delay(600);
+        if (cancelRef.current) break;
+
+        // Phase 2: animate dot along path
+        if (pathEl) {
+          pathEl.classList.add("erd-line-active");
+          await animateDot(pathEl, svgEl, 1200);
+        }
+        if (cancelRef.current) break;
+
+        // Phase 3: highlight target
+        highlightEntity(rel.targetId, svgEl);
+        await delay(600);
+        if (cancelRef.current) break;
+
+        // Phase 4: cooldown
+        unhighlightEntity(rel.sourceId, svgEl);
+        unhighlightEntity(rel.targetId, svgEl);
+        if (pathEl) pathEl.classList.remove("erd-line-active");
+        await delay(300);
+
+        idx++;
+      }
+    }
+    run();
+
+    return () => {
+      cancelRef.current = true;
+      if (svgEl) {
+        svgEl.querySelectorAll(".erd-entity-active").forEach(el => el.classList.remove("erd-entity-active"));
+        svgEl.querySelectorAll(".erd-line-active").forEach(el => el.classList.remove("erd-line-active"));
+        svgEl.querySelectorAll("[data-flow-dot]").forEach(el => el.remove());
+      }
+    };
+  }, [containerRef, svgReady, isAnimating]);
+}
+
 /* ─── Main page ────────────────────────────────────────────────────── */
 export default function DataScale() {
   const [view, setView] = useState("close");
   const captureRef = useRef(null);
+  const [svgContent, setSvgContent] = useState(null);
+  const [animating, setAnimating] = useState(true);
+  const [svgReady, setSvgReady] = useState(false);
+  const svgContainerRef = useRef(null);
+
+  // Fetch SVG for inline rendering — patch width/height to scale in container
+  useEffect(() => {
+    if (view === "table") {
+      fetch("/erd_procurement.svg").then(r => r.text()).then(text => {
+        // Replace fixed width/height so SVG scales to container
+        let patched = text
+          .replace(/(<svg[^>]*)\swidth="[^"]*"/, '$1 width="100%"')
+          .replace(/(<svg[^>]*)\sheight="[^"]*"/, '$1 height="100%"');
+        // Inject glow filter into existing <defs> or after <svg> opening tag
+        const glowDef = `<defs><filter id="data-flow-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+        patched = patched.replace(/(<svg[^>]*>)/, `$1${glowDef}`);
+        setSvgContent(patched);
+      });
+    } else {
+      setSvgContent(null);
+      setSvgReady(false);
+    }
+  }, [view]);
+
+  // Inject animation CSS + glow filter into inlined SVG
+  useEffect(() => {
+    if (!svgContent || !svgContainerRef.current) return;
+    const svgEl = svgContainerRef.current.querySelector("svg");
+    if (!svgEl) return;
+
+    const ns = "http://www.w3.org/2000/svg";
+    const styleEl = document.createElementNS(ns, "style");
+    styleEl.textContent = ANIMATION_CSS;
+    svgEl.insertBefore(styleEl, svgEl.firstChild);
+
+    setSvgReady(true);
+  }, [svgContent]);
+
+  useDataFlowAnimation(svgContainerRef, svgReady, animating);
 
   const views = [
     { id: "close",   label: "① Close-up (5 rows)" },
@@ -358,26 +561,38 @@ export default function DataScale() {
         </div>
       )}
 
-      {/* ③ Single domain ERD — Procurement (contains sales_order) */}
+      {/* ③ Single domain ERD — Procurement with data flow animation */}
       {view === "table" && (
         <div>
           <div style={{
             padding: "16px 24px",
             background: T.surface, borderRadius: 8, border: `1px solid ${T.border}`,
           }}>
-            <div style={{ marginBottom: 12 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: T.text, fontFamily: "'IBM Plex Mono', monospace" }}>
-                Procurement Domain — ERD
-              </span>
-              <span style={{ fontSize: 11, color: T.muted, marginLeft: 12 }}>9 tables · foreign keys to master data</span>
+            <div style={{ marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <span style={{ fontSize: 14, fontWeight: 700, color: T.text, fontFamily: "'IBM Plex Mono', monospace" }}>
+                  Procurement Domain — ERD
+                </span>
+                <span style={{ fontSize: 11, color: T.muted, marginLeft: 12 }}>9 tables · foreign keys to master data</span>
+              </div>
+              <button
+                onClick={() => setAnimating(a => !a)}
+                style={{
+                  ...btnStyle(false),
+                  background: animating ? T.primary + "22" : T.surface2,
+                  borderColor: animating ? T.primary : T.border,
+                  color: animating ? T.primary : T.sub,
+                }}
+              >
+                <span style={{ fontSize: 13 }}>{animating ? "⏸" : "▶"}</span>
+                {animating ? "Pause Flow" : "Animate Flow"}
+              </button>
             </div>
-            <div style={{ overflow: "auto", borderRadius: 4 }}>
-              <img
-                src="/erd_procurement.svg"
-                alt="Procurement ERD"
-                style={{ height: 600, width: "auto" }}
-              />
-            </div>
+            <div
+              ref={svgContainerRef}
+              dangerouslySetInnerHTML={{ __html: svgContent || "" }}
+              style={{ overflow: "auto", borderRadius: 4, height: 600 }}
+            />
           </div>
         </div>
       )}
