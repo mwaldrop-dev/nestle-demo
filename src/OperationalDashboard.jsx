@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   AreaChart, Area, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -153,6 +154,45 @@ function makeAlerts() {
   ];
 }
 
+/* ─── Alert action modal data ────────────────────────────────────────── */
+const ACTION_MODAL_DATA = {
+  Inventory: {
+    heading: "Alternate Suppliers — Milk Powder",
+    aiRec: "Activate Lactalis (France) — lowest lead time with adequate stock. Split remaining shortfall to FrieslandCampina for cost efficiency.",
+    aiConfidence: 94,
+    actionLabel: "Activate Supplier",
+    suppliers: [
+      { name: "Lactalis",          region: "France",        leadTime: "3 days",  costPremium: "+4%",  availQty: "12 MT", aiScore: 96 },
+      { name: "FrieslandCampina",  region: "Netherlands",   leadTime: "4 days",  costPremium: "+2%",  availQty: "18 MT", aiScore: 91 },
+      { name: "Amul",              region: "India",         leadTime: "8 days",  costPremium: "-5%",  availQty: "25 MT", aiScore: 78 },
+      { name: "Saputo",            region: "Canada",        leadTime: "7 days",  costPremium: "+7%",  availQty: "10 MT", aiScore: 72 },
+      { name: "Arla Foods",        region: "Denmark",       leadTime: "5 days",  costPremium: "+3%",  availQty: "14 MT", aiScore: 88 },
+    ],
+  },
+  Supplier: {
+    heading: "Response Actions — Supplier Delay",
+    aiRec: "Expedite current Fonterra shipment via air freight — estimated delivery improves from 12 days to 4 days at +$8,200 cost.",
+    aiConfidence: 87,
+    actionLabel: "Execute Action",
+    actions: [
+      { icon: "✈", label: "Expedite Shipment",   desc: "Switch to air freight for pending orders. Reduces lead time by 60%.", tag: "+$8.2K" },
+      { icon: "🔄", label: "Switch to Alternate", desc: "Reroute demand to next-best qualified supplier (Lactalis).",         tag: "2-day setup" },
+      { icon: "✂", label: "Split Order",          desc: "Distribute remaining PO across 2 backup suppliers to reduce risk.",  tag: "Balanced" },
+    ],
+  },
+  "Cold Chain": {
+    heading: "Cold Chain Intervention",
+    aiRec: "Reroute TRK-447 to Zürich hub — current trajectory breaches 4°C ceiling within 45 min. Backup reefer available at hub.",
+    aiConfidence: 91,
+    actionLabel: "Execute Action",
+    actions: [
+      { icon: "📍", label: "Reroute to Nearest Hub", desc: "Divert vehicle to Zürich cold-storage hub (18 km). ETA 22 min.",    tag: "Fastest" },
+      { icon: "🚛", label: "Dispatch Backup Reefer",  desc: "Send replacement reefer from Milan depot. Swap cargo on-route.",    tag: "45 min" },
+      { icon: "📞", label: "Alert Receiver",           desc: "Notify receiving warehouse of potential temp exceedance on arrival.", tag: "Inform" },
+    ],
+  },
+};
+
 function makeFactories() {
   const base = [
     { name:"Broc (CH)",         lines:6, baseOee:93, running:6 },
@@ -286,7 +326,7 @@ function KpiStrip({ kpis, tick }) {
 }
 
 /* ─── Alerts panel ───────────────────────────────────────────────────── */
-function AlertsPanel({ alerts }) {
+function AlertsPanel({ alerts, onAct }) {
   const [filter, setFilter] = useState("All");
   const cats = ["All", "Supplier", "Inventory", "Cold Chain"];
   const visible = filter === "All" ? alerts : alerts.filter(a => a.category === filter);
@@ -320,7 +360,7 @@ function AlertsPanel({ alerts }) {
                 <Badge status={a.sev === "critical" ? "critical" : a.sev === "warning" ? "warning" : "ok"} label={a.category} />
               </div>
             </div>
-            <span style={{ fontSize: 11, color: T.primary, cursor: "pointer", whiteSpace: "nowrap", fontWeight: 600 }}>Act →</span>
+            <span onClick={() => onAct && onAct(a)} style={{ fontSize: 11, color: T.primary, cursor: "pointer", whiteSpace: "nowrap", fontWeight: 600 }}>Act →</span>
           </div>
         ))}
       </div>
@@ -521,6 +561,237 @@ const NAV_ITEMS = [
   { icon: "↗", label: "Reports",     active: false },
 ];
 
+/* ─── Action Modal ──────────────────────────────────────────────────── */
+function ActionModal({ alert, onClose }) {
+  const [selected, setSelected] = useState(0);
+  const [phase, setPhase] = useState("idle"); // idle | confirming | success
+
+  const modalData = ACTION_MODAL_DATA[alert.category];
+  if (!modalData) return null;
+
+  const isSupplierTable = !!modalData.suppliers;
+
+  // Keyboard: Escape to close
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  const handleAction = () => {
+    if (phase !== "idle") return;
+    setPhase("confirming");
+    setTimeout(() => {
+      setPhase("success");
+      setTimeout(() => onClose(), 1500);
+    }, 800);
+  };
+
+  const sevColor = alert.sev === "critical" ? T.red : alert.sev === "warning" ? T.amber : T.primary;
+
+  return createPortal(
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 99999,
+        background: "rgba(0,0,0,0.6)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        animation: "modalBackdropIn 0.2s ease-out",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: T.surface, border: `1px solid ${T.border}`,
+          borderRadius: 14, width: "100%", maxWidth: 640,
+          boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+          animation: "modalFadeIn 0.25s ease-out",
+          overflow: "hidden",
+        }}
+      >
+        {/* Header */}
+        <div style={{
+          padding: "16px 20px", borderBottom: `1px solid ${T.border}`,
+          display: "flex", alignItems: "flex-start", gap: 12,
+        }}>
+          <div style={{
+            width: 8, height: 8, borderRadius: "50%", marginTop: 5,
+            background: sevColor, boxShadow: `0 0 8px ${sevColor}`,
+            flexShrink: 0,
+          }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: T.text, lineHeight: 1.4 }}>{alert.msg}</div>
+            <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+              <Badge status={alert.sev === "critical" ? "critical" : alert.sev === "warning" ? "warning" : "ok"} label={alert.category} />
+              <span style={{ fontSize: 10, color: T.muted, fontFamily: "monospace" }}>{alert.time}</span>
+            </div>
+          </div>
+          <span
+            onClick={onClose}
+            style={{
+              fontSize: 18, color: T.muted, cursor: "pointer", lineHeight: 1,
+              padding: "2px 6px", borderRadius: 4,
+            }}
+          >✕</span>
+        </div>
+
+        {/* AI Recommendation */}
+        <div style={{
+          margin: "16px 20px 0", padding: "12px 16px",
+          background: `${T.primary}12`, border: `1px solid ${T.primary}33`,
+          borderRadius: 8,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <span style={{
+              fontSize: 9, fontWeight: 800, letterSpacing: 1.2, color: T.primary,
+              fontFamily: "'IBM Plex Mono', monospace",
+            }}>AI RECOMMENDATION</span>
+            <span style={{
+              fontSize: 10, fontWeight: 700, color: T.primary,
+              background: `${T.primary}22`, borderRadius: 10, padding: "1px 8px",
+              fontFamily: "monospace",
+            }}>{modalData.aiConfidence}% confidence</span>
+          </div>
+          <div style={{ fontSize: 12, color: T.text, lineHeight: 1.5 }}>{modalData.aiRec}</div>
+        </div>
+
+        {/* Content area */}
+        <div style={{ padding: "16px 20px" }}>
+          <div style={{
+            fontSize: 12, fontWeight: 700, color: T.sub, marginBottom: 10,
+            textTransform: "uppercase", letterSpacing: 0.8,
+            fontFamily: "'IBM Plex Mono', monospace",
+          }}>{modalData.heading}</div>
+
+          {isSupplierTable ? (
+            /* Supplier selection table */
+            <div style={{ borderRadius: 8, border: `1px solid ${T.border}`, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+                <thead>
+                  <tr style={{ background: T.bg }}>
+                    {["", "Supplier", "Region", "Lead Time", "Cost", "Avail.", "AI Score"].map(h => (
+                      <th key={h} style={{
+                        textAlign: "left", padding: "8px 10px", fontSize: 9,
+                        color: T.muted, textTransform: "uppercase", letterSpacing: 1,
+                        fontFamily: "'IBM Plex Mono', monospace", fontWeight: 600,
+                        borderBottom: `1px solid ${T.border}`,
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {modalData.suppliers.map((s, i) => {
+                    const isSelected = selected === i;
+                    return (
+                      <tr
+                        key={s.name}
+                        onClick={() => setSelected(i)}
+                        style={{
+                          cursor: "pointer",
+                          background: isSelected ? `${T.primary}15` : "transparent",
+                          transition: "background 0.15s",
+                        }}
+                      >
+                        <td style={{ padding: "9px 10px", borderBottom: `1px solid ${T.border}`, width: 30 }}>
+                          <div style={{
+                            width: 16, height: 16, borderRadius: "50%",
+                            border: `2px solid ${isSelected ? T.primary : T.muted}`,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            transition: "border-color 0.15s",
+                          }}>
+                            {isSelected && <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.primary }} />}
+                          </div>
+                        </td>
+                        <td style={{ padding: "9px 10px", color: T.text, fontWeight: isSelected ? 700 : 400, borderBottom: `1px solid ${T.border}` }}>{s.name}</td>
+                        <td style={{ padding: "9px 10px", color: T.sub, borderBottom: `1px solid ${T.border}` }}>{s.region}</td>
+                        <td style={{ padding: "9px 10px", color: T.sub, fontFamily: "monospace", borderBottom: `1px solid ${T.border}` }}>{s.leadTime}</td>
+                        <td style={{ padding: "9px 10px", color: s.costPremium.startsWith("-") ? T.green : T.amber, fontFamily: "monospace", fontWeight: 600, borderBottom: `1px solid ${T.border}` }}>{s.costPremium}</td>
+                        <td style={{ padding: "9px 10px", color: T.sub, fontFamily: "monospace", borderBottom: `1px solid ${T.border}` }}>{s.availQty}</td>
+                        <td style={{ padding: "9px 10px", borderBottom: `1px solid ${T.border}` }}>
+                          <span style={{
+                            fontFamily: "monospace", fontWeight: 700, fontSize: 12,
+                            color: s.aiScore >= 90 ? T.green : s.aiScore >= 80 ? T.amber : T.sub,
+                          }}>{s.aiScore}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            /* Action cards */
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {modalData.actions.map((a, i) => {
+                const isSelected = selected === i;
+                return (
+                  <div
+                    key={a.label}
+                    onClick={() => setSelected(i)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 14,
+                      padding: "14px 16px", borderRadius: 8, cursor: "pointer",
+                      border: `1.5px solid ${isSelected ? T.primary : T.border}`,
+                      background: isSelected ? `${T.primary}12` : T.bg,
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    <span style={{ fontSize: 22 }}>{a.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{a.label}</div>
+                      <div style={{ fontSize: 11, color: T.sub, marginTop: 2, lineHeight: 1.4 }}>{a.desc}</div>
+                    </div>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, color: T.primary,
+                      background: `${T.primary}18`, borderRadius: 6, padding: "3px 10px",
+                      fontFamily: "'IBM Plex Mono', monospace", whiteSpace: "nowrap",
+                    }}>{a.tag}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding: "14px 20px", borderTop: `1px solid ${T.border}`,
+          display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 14,
+        }}>
+          {phase === "success" ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 18, color: T.green }}>✓</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.green }}>Action confirmed</span>
+            </div>
+          ) : (
+            <>
+              <span
+                onClick={onClose}
+                style={{ fontSize: 12, color: T.muted, cursor: "pointer", padding: "6px 4px" }}
+              >Cancel</span>
+              <button
+                onClick={handleAction}
+                disabled={phase === "confirming"}
+                style={{
+                  background: phase === "confirming" ? T.muted : T.primary,
+                  color: "#fff", border: "none", borderRadius: 8,
+                  padding: "9px 22px", fontSize: 12, fontWeight: 700,
+                  cursor: phase === "confirming" ? "wait" : "pointer",
+                  transition: "background 0.2s",
+                  fontFamily: "'IBM Plex Sans', sans-serif",
+                }}
+              >
+                {phase === "confirming" ? "Processing…" : modalData.actionLabel}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 /* ─── Root ───────────────────────────────────────────────────────────── */
 /* ─── Refresh timer display ─────────────────────────────────────────── */
 function RefreshTimer({ lastRefresh, isRefreshing, now }) {
@@ -613,6 +884,9 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
   const realNow = useClock();
   const { tick: autoTick, lastRefresh: autoLast, isRefreshing: autoRefreshing } = useDataRefresh();
   const autoData = useDashboardData(frozen ? 0 : (overrideTick ?? autoTick));
+
+  // ── Action modal ──
+  const [actionAlert, setActionAlert] = useState(null);
 
   // ── Accelerated time mode (toggle) ──
   const [accelOn, setAccelOn] = useState(false);
@@ -752,7 +1026,7 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
 
           {/* Row 2: alerts + supplier table */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 14, marginTop: 14 }}>
-            <AlertsPanel alerts={data.alerts} />
+            <AlertsPanel alerts={data.alerts} onAct={setActionAlert} />
             <SupplierTable suppliers={data.suppliers} />
           </div>
 
@@ -772,6 +1046,9 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
           </div>
         </div>
       </div>
+
+      {/* Action modal */}
+      {actionAlert && <ActionModal alert={actionAlert} onClose={() => setActionAlert(null)} />}
     </div>
   );
 }
@@ -922,6 +1199,8 @@ export default function OperationalDashboard() {
     const style = document.createElement("style");
     style.textContent = `
       @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+      @keyframes modalFadeIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
+      @keyframes modalBackdropIn { from { opacity:0; } to { opacity:1; } }
     `;
     document.head.appendChild(style);
     return () => document.head.removeChild(style);
