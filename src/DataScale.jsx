@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import html2canvas from "html2canvas";
+import { GIFEncoder, quantize, applyPalette } from "gifenc";
 
 /* ─── Design tokens (same as dashboard) ────────────────────────────── */
 const T = {
@@ -289,6 +290,136 @@ function ExportButtons({ targetRef, filename }) {
   );
 }
 
+/* ─── Animated GIF export ──────────────────────────────────────────── */
+const GIF_FPS = 6;
+const GIF_DURATION_S = 5;
+const GIF_TOTAL_FRAMES = GIF_FPS * GIF_DURATION_S; // 30
+const GIF_FRAME_DELAY = Math.round(1000 / GIF_FPS);  // 167ms
+
+function GifExportButton({ animWrapperRef, animating, setAnimating, gifState, setGifState }) {
+  const abortRef = useRef(false);
+
+  const startRecording = useCallback(async () => {
+    if (!animWrapperRef.current || gifState) return;
+    abortRef.current = false;
+
+    // Force animation on if paused
+    if (!animating) setAnimating(true);
+
+    setGifState({ phase: "capturing", frame: 0, total: GIF_TOTAL_FRAMES });
+
+    const wrapperEl = animWrapperRef.current;
+    const frames = []; // store captured canvases
+
+    // Capture frames
+    for (let i = 0; i < GIF_TOTAL_FRAMES; i++) {
+      if (abortRef.current) break;
+      const t0 = performance.now();
+
+      // Hide recording overlay during capture
+      const ov = wrapperEl.querySelector("[data-gif-overlay]");
+      if (ov) ov.style.display = "none";
+
+      try {
+        const canvas = await html2canvas(wrapperEl, {
+          backgroundColor: "#0E1117",
+          scale: 1,
+          useCORS: true,
+          logging: false,
+        });
+        frames.push(canvas);
+      } catch (err) {
+        console.error("Frame capture failed:", err);
+      }
+
+      if (ov) ov.style.display = "";
+
+
+      setGifState({ phase: "capturing", frame: i + 1, total: GIF_TOTAL_FRAMES });
+
+      // Wait to maintain ~real-time capture pace
+      const elapsed = performance.now() - t0;
+      const wait = Math.max(0, GIF_FRAME_DELAY - elapsed);
+      if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    }
+
+    if (abortRef.current || frames.length === 0) {
+      setGifState(null);
+      return;
+    }
+
+    // Encoding phase
+    setGifState({ phase: "encoding", frame: frames.length, total: GIF_TOTAL_FRAMES });
+
+    // Small yield to let React render the "Encoding" state
+    await new Promise(r => setTimeout(r, 50));
+
+    try {
+      const w = frames[0].width;
+      const h = frames[0].height;
+      const gif = GIFEncoder();
+
+      for (let i = 0; i < frames.length; i++) {
+        const ctx = frames[i].getContext("2d");
+        const { data } = ctx.getImageData(0, 0, w, h);
+        const palette = quantize(data, 256, { format: "rgba4444" });
+        const index = applyPalette(data, palette, "rgba4444");
+        gif.writeFrame(index, w, h, { palette, delay: GIF_FRAME_DELAY, dispose: 2 });
+
+        // Yield every few frames to keep UI responsive
+        if (i % 5 === 0) await new Promise(r => setTimeout(r, 0));
+      }
+
+      gif.finish();
+      const blob = new Blob([gif.bytes()], { type: "image/gif" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = `nestle-erd-data-flow-${Date.now()}.gif`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("GIF encoding failed:", err);
+    }
+
+    // Free memory
+    frames.length = 0;
+    setGifState(null);
+  }, [animWrapperRef, animating, setAnimating, gifState, setGifState]);
+
+  const cancel = useCallback(() => {
+    abortRef.current = true;
+  }, []);
+
+  const recording = !!gifState;
+  const label = !gifState
+    ? "GIF"
+    : gifState.phase === "capturing"
+    ? `REC ${gifState.frame}/${gifState.total}`
+    : "Encoding…";
+
+  return (
+    <button
+      onClick={recording ? cancel : startRecording}
+      style={{
+        ...btnStyle(gifState?.phase === "encoding"),
+        background: recording ? "#F0525222" : T.surface2,
+        borderColor: recording ? "#F05252" : T.border,
+        color: recording ? "#F05252" : T.sub,
+        minWidth: 90,
+      }}
+    >
+      <span style={{ fontSize: 13 }}>
+        {!gifState ? "⬇" : gifState.phase === "capturing" ? "⏺" : "⏳"}
+      </span>
+      {recording ? label : "GIF"}
+      {recording && gifState.phase === "capturing" && (
+        <span style={{ fontSize: 9, marginLeft: 4, opacity: 0.6 }}>cancel</span>
+      )}
+    </button>
+  );
+}
+
 /* ─── Data flow animation for ERD ──────────────────────────────────── */
 const NV = "#76B900"; // Nvidia green
 const NV2 = "#9AE62E"; // lighter Nvidia green for accents
@@ -465,10 +596,10 @@ function launchUpliftDot(entityId, svgEl, cancelled, wrapperEl) {
     marginLeft: "-2px",
     height: "0px",
     borderRadius: "2px",
-    background: `linear-gradient(to top, transparent, ${NV})`,
+    background: NV,
+    opacity: "0.5",
     zIndex: "9",
     pointerEvents: "none",
-    opacity: "0.7",
   });
   streak.setAttribute("data-uplift-dot", "");
 
@@ -615,7 +746,7 @@ function SQLEngineBox({ animating }) {
       position: "relative", zIndex: 2,
       margin: "0 auto 0", width: "fit-content", minWidth: 340,
       padding: "10px 28px 12px",
-      background: `linear-gradient(135deg, #1a2a10 0%, #0E1117 50%, #1a2a10 100%)`,
+      background: "#111a10",
       border: `2px solid ${NV}88`,
       borderRadius: 10,
       animation: animating ? "engine-pulse 2.5s ease-in-out infinite" : "none",
@@ -641,7 +772,7 @@ function SQLEngineBox({ animating }) {
           }}>
             <div style={{
               height: "100%", borderRadius: 2,
-              background: `linear-gradient(90deg, ${NV}, ${NV2})`,
+              background: NV,
               animation: animating ? `engine-bar ${1.8 + i * 0.3}s ease-in-out ${d}s infinite` : "none",
               width: "20%",
             }} />
@@ -724,6 +855,7 @@ export default function DataScale() {
   const animWrapperRef = useRef(null);
   const [erdZoom, setErdZoom] = useState(0.08);
   const erdScrollRef = useRef(null);
+  const [gifState, setGifState] = useState(null); // null | { phase, frame, total }
 
   // Fetch SVG for inline rendering — patch width/height to scale in container
   useEffect(() => {
@@ -759,6 +891,11 @@ export default function DataScale() {
   }, [svgContent]);
 
   useDataFlowAnimation(svgContainerRef, animWrapperRef, svgReady, animating);
+
+  // Abort GIF recording if view changes away from "table"
+  useEffect(() => {
+    if (view !== "table" && gifState) setGifState(null);
+  }, [view, gifState]);
 
   const views = [
     { id: "close",   label: "① Close-up (5 rows)" },
@@ -839,22 +976,52 @@ export default function DataScale() {
                 </span>
                 <span style={{ fontSize: 11, color: T.muted, marginLeft: 12 }}>9 tables · foreign keys to master data</span>
               </div>
-              <button
-                onClick={() => setAnimating(a => !a)}
-                style={{
-                  ...btnStyle(false),
-                  background: animating ? NV + "22" : T.surface2,
-                  borderColor: animating ? NV : T.border,
-                  color: animating ? NV : T.sub,
-                }}
-              >
-                <span style={{ fontSize: 13 }}>{animating ? "⏸" : "▶"}</span>
-                {animating ? "Pause Flow" : "Animate Flow"}
-              </button>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <button
+                  onClick={() => setAnimating(a => !a)}
+                  disabled={!!gifState}
+                  style={{
+                    ...btnStyle(false),
+                    background: animating ? NV + "22" : T.surface2,
+                    borderColor: animating ? NV : T.border,
+                    color: animating ? NV : T.sub,
+                    opacity: gifState ? 0.4 : 1,
+                  }}
+                >
+                  <span style={{ fontSize: 13 }}>{animating ? "⏸" : "▶"}</span>
+                  {animating ? "Pause Flow" : "Animate Flow"}
+                </button>
+                <GifExportButton
+                  animWrapperRef={animWrapperRef}
+                  animating={animating}
+                  setAnimating={setAnimating}
+                  gifState={gifState}
+                  setGifState={setGifState}
+                />
+              </div>
             </div>
 
             {/* SQL Engine + rising dots + ERD */}
             <div ref={animWrapperRef} style={{ position: "relative" }}>
+              {/* Recording overlay */}
+              {gifState && (
+                <div data-gif-overlay style={{
+                  position: "absolute", top: 8, right: 8, zIndex: 20,
+                  background: "rgba(0,0,0,0.75)", borderRadius: 6, padding: "4px 12px",
+                  display: "flex", alignItems: "center", gap: 6, pointerEvents: "none",
+                }}>
+                  <div style={{
+                    width: 8, height: 8, borderRadius: "50%",
+                    background: gifState.phase === "capturing" ? "#F05252" : "#FBBF24",
+                    animation: "engine-pulse 1s infinite",
+                  }} />
+                  <span style={{ fontSize: 10, color: "#fff", fontFamily: "'IBM Plex Mono', monospace" }}>
+                    {gifState.phase === "capturing"
+                      ? `REC ${gifState.frame}/${gifState.total}`
+                      : "Encoding…"}
+                  </span>
+                </div>
+              )}
               <SQLEngineBox animating={animating} />
               <div style={{ position: "relative", height: 100 }}>
                 <RisingDots animating={animating} height={100} />
