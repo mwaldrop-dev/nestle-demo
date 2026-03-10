@@ -382,12 +382,11 @@ export default function DataScale() {
         </div>
       )}
 
-      {/* ④ Full ERD crammed into one view — intentionally unreadable */}
+      {/* ④ Full ERD — Mermaid-rendered single image */}
       {view === "mega" && (
         <div style={{
           background: T.surface, borderRadius: 8, border: `1px solid ${T.border}`,
-          overflow: "hidden", position: "relative",
-          maxWidth: 1000, /* lock width so it looks dense on any screen */
+          overflow: "hidden",
         }}>
           <div style={{
             padding: "12px 20px", borderBottom: `1px solid ${T.border}`,
@@ -398,54 +397,12 @@ export default function DataScale() {
             </span>
             <span style={{ fontSize: 11, color: T.muted }}>Nestlé Supply Chain Operations</span>
           </div>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: 0,
-          }}>
-            {[
-              { file: "erd_master_data.svg",   label: "Master Data" },
-              { file: "erd_organization.svg",   label: "Organization" },
-              { file: "erd_supplier_mgmt.svg",  label: "Supplier Mgmt" },
-              { file: "erd_procurement.svg",     label: "Procurement" },
-              { file: "erd_inventory.svg",       label: "Inventory" },
-              { file: "erd_production.svg",      label: "Production" },
-              { file: "erd_quality.svg",         label: "Quality" },
-              { file: "erd_logistics.svg",       label: "Logistics" },
-              { file: "erd_alerts.svg",          label: "Alerts" },
-              { file: "erd_kpis_demand.svg",     label: "KPIs & Demand" },
-            ].map(d => (
-              <div key={d.file} style={{
-                borderRight: `1px solid ${T.border}22`,
-                borderBottom: `1px solid ${T.border}22`,
-                overflow: "hidden", height: 110,
-              }}>
-                <img
-                  src={`/${d.file}`}
-                  alt={d.label}
-                  style={{
-                    width: "200%", height: "200%",
-                    objectFit: "contain", objectPosition: "center top",
-                    opacity: 0.85,
-                    transform: "scale(0.55)", transformOrigin: "top left",
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-          {/* Overlay label */}
-          <div style={{
-            position: "absolute", bottom: 0, left: 0, right: 0,
-            padding: "24px 0 14px",
-            background: "linear-gradient(0deg, rgba(14,17,23,0.95) 0%, rgba(14,17,23,0) 100%)",
-            textAlign: "center",
-          }}>
-            <span style={{
-              fontSize: 12, color: T.sub, fontFamily: "'IBM Plex Mono', monospace",
-              letterSpacing: 1,
-            }}>
-              100 tables · 226 foreign keys · 10 operational domains
-            </span>
+          <div style={{ padding: 16, overflow: "auto", maxHeight: "75vh" }}>
+            <img
+              src="/erd_overview_mermaid.svg"
+              alt="Full ERD — 100 tables"
+              style={{ width: 14853, height: 4519, maxWidth: "none" }}
+            />
           </div>
         </div>
       )}
