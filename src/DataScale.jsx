@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
+import html2canvas from "html2canvas";
 
 /* ─── Design tokens (same as dashboard) ────────────────────────────── */
 const T = {
@@ -181,9 +182,56 @@ function DataTable({ rows, fontSize = 12, rowHeight = 32, showRowNums = false, t
 const ROWS_5   = Array.from({ length: 5 },   (_, i) => fakeOrder(i));
 const ROWS_200 = Array.from({ length: 200 }, (_, i) => fakeOrder(i));
 
+/* ─── Export button ─────────────────────────────────────────────────── */
+function ExportButton({ targetRef, filename }) {
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    if (!targetRef.current || exporting) return;
+    setExporting(true);
+    try {
+      const el = targetRef.current;
+      const canvas = await html2canvas(el, {
+        backgroundColor: "#0E1117",
+        scale: 2,                 // 2× for high-res
+        useCORS: true,
+        logging: false,
+      });
+      const link = document.createElement("a");
+      link.download = `${filename}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  }, [targetRef, filename, exporting]);
+
+  return (
+    <button
+      onClick={handleExport}
+      disabled={exporting}
+      style={{
+        padding: "6px 14px", borderRadius: 6, cursor: exporting ? "wait" : "pointer",
+        border: `1px solid ${T.border}`,
+        background: T.surface2, color: T.sub,
+        fontWeight: 600, fontSize: 11,
+        fontFamily: "'IBM Plex Mono', monospace",
+        display: "flex", alignItems: "center", gap: 6,
+        opacity: exporting ? 0.5 : 1, transition: "opacity 0.2s",
+      }}
+    >
+      <span style={{ fontSize: 13 }}>⬇</span>
+      {exporting ? "Exporting…" : "Export PNG (2×)"}
+    </button>
+  );
+}
+
 /* ─── Main page ────────────────────────────────────────────────────── */
 export default function DataScale() {
   const [view, setView] = useState("close");
+  const captureRef = useRef(null);
 
   const views = [
     { id: "close",   label: "① Close-up (5 rows)" },
@@ -198,8 +246,8 @@ export default function DataScale() {
       minHeight: "100vh", background: T.bg, padding: 24,
       fontFamily: "'IBM Plex Sans', 'Segoe UI', sans-serif",
     }}>
-      {/* Tab bar */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+      {/* Tab bar + export */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", alignItems: "center" }}>
         {views.map(v => (
           <button
             key={v.id}
@@ -214,7 +262,13 @@ export default function DataScale() {
             }}
           >{v.label}</button>
         ))}
+        <div style={{ marginLeft: "auto" }}>
+          <ExportButton targetRef={captureRef} filename={`nestle-data-scale-${view}`} />
+        </div>
       </div>
+
+      {/* Capture wrapper — everything inside here gets exported */}
+      <div ref={captureRef} style={{ background: T.bg, padding: 4 }}>
 
       {/* ① Close-up */}
       {view === "close" && (
@@ -380,6 +434,9 @@ export default function DataScale() {
           </div>
         </div>
       )}
+
+      </div>
+      {/* end capture wrapper */}
     </div>
   );
 }
