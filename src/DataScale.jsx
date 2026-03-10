@@ -207,10 +207,17 @@ function ExportButtons({ targetRef, filename }) {
         useCORS: true,
         logging: false,
       });
-      const link = document.createElement("a");
-      link.download = `${filename}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      canvas.toBlob(blob => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `${filename}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, "image/png");
     } catch (err) {
       console.error("PNG export failed:", err);
     } finally {
