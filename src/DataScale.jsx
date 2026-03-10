@@ -548,55 +548,63 @@ function unhighlightEntity(entityId, svgEl) {
   if (g) g.classList.remove("erd-entity-active");
 }
 
-// After a path animation, launch a visible HTML dot from the entity upward to the engine.
-// Uses the wrapperEl (position:relative parent) so the dot is NOT clipped by the SVG overflow.
-function launchUpliftDot(entityId, svgEl, cancelled, wrapperEl) {
+// After a path animation, launch a visible HTML dot from the entity upward through
+// the CPU or GPU processor box, then continue to the SQL Engine box.
+function launchUpliftDot(entityId, svgEl, cancelled, wrapperEl, phase) {
   if (cancelled() || !wrapperEl) return;
   const g = svgEl.querySelector(`[id="${entityId}"]`);
   if (!g) return;
 
-  // Use getBoundingClientRect on the entity <g> itself — this accounts
-  // for all SVG transforms, viewBox scaling, and scroll position.
+  const selector = phase === "gpu" ? "[data-gpu-box]" : "[data-cpu-box]";
+  const procBox = wrapperEl.querySelector(selector);
+  if (!procBox) return;
+
   const gRect = g.getBoundingClientRect();
   const wrapRect = wrapperEl.getBoundingClientRect();
+  const procRect = procBox.getBoundingClientRect();
 
-  // Center-top of the entity box, relative to the wrapper
+  // Start: center-top of entity box
   const startX = gRect.left + gRect.width / 2 - wrapRect.left;
   const startY = gRect.top - wrapRect.top;
 
-  // Target: center of the engine box (roughly center-x of wrapper, top ~40px)
-  const engineCenterX = wrapRect.width / 2;
-  const endY = 35; // vertically near engine center
+  // Midpoint: center of the processor box (CPU or GPU)
+  const midX = procRect.left + procRect.width / 2 - wrapRect.left;
+  const midY = procRect.top + procRect.height / 2 - wrapRect.top;
 
-  // Create the rising dot in the HTML layer
+  // End: center of the SQL Engine box (top of wrapper, ~35px)
+  const endX = wrapRect.width / 2;
+  const endY = 25;
+
+  const dotColor = phase === "gpu" ? NV2 : "#7EC8FF"; // green for GPU, light blue for CPU
+  const glowColor = phase === "gpu" ? NV : CPU_COLOR;
+
   const dot = document.createElement("div");
   Object.assign(dot.style, {
     position: "absolute",
     left: `${startX}px`,
     top: `${startY}px`,
-    width: "14px",
-    height: "14px",
-    marginLeft: "-7px",
-    marginTop: "-7px",
+    width: "12px",
+    height: "12px",
+    marginLeft: "-6px",
+    marginTop: "-6px",
     borderRadius: "50%",
-    background: NV2,
-    boxShadow: `0 0 18px ${NV}, 0 0 8px ${NV}`,
+    background: dotColor,
+    boxShadow: `0 0 14px ${glowColor}, 0 0 6px ${glowColor}`,
     zIndex: "10",
     pointerEvents: "none",
   });
   dot.setAttribute("data-uplift-dot", "");
 
-  // Streak trail
   const streak = document.createElement("div");
   Object.assign(streak.style, {
     position: "absolute",
     left: `${startX}px`,
     top: `${startY}px`,
-    width: "4px",
-    marginLeft: "-2px",
+    width: "3px",
+    marginLeft: "-1.5px",
     height: "0px",
     borderRadius: "2px",
-    background: NV,
+    background: glowColor,
     opacity: "0.5",
     zIndex: "9",
     pointerEvents: "none",
@@ -606,33 +614,43 @@ function launchUpliftDot(entityId, svgEl, cancelled, wrapperEl) {
   wrapperEl.appendChild(streak);
   wrapperEl.appendChild(dot);
 
-  const duration = 1000 + Math.random() * 400;
+  // Two-segment animation: entity → processor box → SQL engine
+  // Segment 1 ends at 0.5 progress (arrive at processor box)
+  // Segment 2 ends at 1.0 progress (arrive at SQL engine)
+  const totalDuration = phase === "gpu" ? (700 + Math.random() * 200) : (1200 + Math.random() * 400);
   const startTime = performance.now();
 
   function step(now) {
     if (cancelled()) { dot.remove(); streak.remove(); return; }
-    const progress = Math.min((now - startTime) / duration, 1);
-    // Smoothstep ease
+    const progress = Math.min((now - startTime) / totalDuration, 1);
     const eased = progress * progress * (3 - 2 * progress);
 
-    // Interpolate both X (toward engine center) and Y (upward)
-    const x = startX + (engineCenterX - startX) * eased;
-    const y = startY + (endY - startY) * eased;
+    let x, y;
+    if (eased < 0.5) {
+      // Segment 1: entity → processor box center
+      const seg = eased / 0.5; // 0..1 within segment
+      x = startX + (midX - startX) * seg;
+      y = startY + (midY - startY) * seg;
+    } else {
+      // Segment 2: processor box center → SQL engine
+      const seg = (eased - 0.5) / 0.5; // 0..1 within segment
+      x = midX + (endX - midX) * seg;
+      y = midY + (endY - midY) * seg;
+    }
 
     dot.style.left = `${x}px`;
     dot.style.top = `${y}px`;
     dot.style.opacity = String(1 - progress * 0.3);
-    const size = 14 * (1 - progress * 0.2);
+    const size = 12 * (1 - progress * 0.25);
     dot.style.width = dot.style.height = `${size}px`;
     dot.style.marginLeft = `${-size / 2}px`;
     dot.style.marginTop = `${-size / 2}px`;
 
-    // Streak trails behind the dot, angled along the path
-    const streakLen = Math.min(70 * Math.sin(progress * Math.PI), 70);
+    const streakLen = Math.min(50 * Math.sin(progress * Math.PI), 50);
     streak.style.left = `${x}px`;
     streak.style.top = `${y}px`;
     streak.style.height = `${Math.max(0, streakLen)}px`;
-    streak.style.opacity = String(0.7 * (1 - progress * 0.5));
+    streak.style.opacity = String(0.6 * (1 - progress * 0.5));
 
     if (progress < 1) requestAnimationFrame(step);
     else { dot.remove(); streak.remove(); }
@@ -640,35 +658,38 @@ function launchUpliftDot(entityId, svgEl, cancelled, wrapperEl) {
   requestAnimationFrame(step);
 }
 
+// Phase-specific animation parameters
+const PHASE_CONFIG = {
+  cpu: { flows: 1, dotDuration: 1200, laneStagger: 0, gapMin: 800, gapMax: 1200, target: "cpu" },
+  gpu: { flows: 6, dotDuration: 400,  laneStagger: 100, gapMin: 100, gapMax: 200,  target: "gpu" },
+};
+
 // Run a single relationship flow (source glow → dot travel → target glow → uplift → fade)
-async function runOneFlow(rel, svgEl, cancelled, wrapperEl) {
+async function runOneFlow(rel, svgEl, cancelled, wrapperEl, phase) {
+  const cfg = PHASE_CONFIG[phase] || PHASE_CONFIG.cpu;
   const pathEl = svgEl.querySelector(`[id="${rel.pathId}"]`);
   if (!pathEl || cancelled()) return;
 
   highlightEntity(rel.sourceId, svgEl);
-  await delay(400);
+  await delay(phase === "cpu" ? 400 : 150);
   if (cancelled()) return;
 
   if (pathEl) {
     pathEl.classList.add("erd-line-active");
-    await animateDot(pathEl, svgEl, 900, cancelled);
+    await animateDot(pathEl, svgEl, cfg.dotDuration, cancelled);
   }
   if (cancelled()) return;
 
   highlightEntity(rel.targetId, svgEl);
-  // Launch an uplift dot from the target entity toward the engine
-  launchUpliftDot(rel.targetId, svgEl, cancelled, wrapperEl);
-  await delay(400);
+  // Launch an uplift dot from the target entity toward the processor box
+  launchUpliftDot(rel.targetId, svgEl, cancelled, wrapperEl, phase);
+  await delay(phase === "cpu" ? 400 : 100);
   if (cancelled()) return;
 
-  // Entities auto-unhighlight via setTimeout in highlightEntity,
-  // but clean up line glow here
   if (pathEl) pathEl.classList.remove("erd-line-active");
 }
 
-const CONCURRENT_FLOWS = 3; // number of simultaneous paths
-
-function useDataFlowAnimation(containerRef, wrapperRef, svgReady, isAnimating) {
+function useDataFlowAnimation(containerRef, wrapperRef, svgReady, isAnimating, animPhase) {
   const cancelRef = useRef(true);
 
   useEffect(() => {
@@ -683,23 +704,21 @@ function useDataFlowAnimation(containerRef, wrapperRef, svgReady, isAnimating) {
     const rels = parseRelationships(svgEl);
     if (!rels.length) return;
 
-    // Shuffle relationships for variety
+    const cfg = PHASE_CONFIG[animPhase] || PHASE_CONFIG.cpu;
     const shuffled = [...rels].sort(() => Math.random() - 0.5);
     const cancelled = () => cancelRef.current;
 
     // Launch N staggered concurrent flow lanes
     const lanes = [];
-    for (let lane = 0; lane < CONCURRENT_FLOWS; lane++) {
-      let idx = lane * Math.floor(shuffled.length / CONCURRENT_FLOWS);
+    for (let lane = 0; lane < cfg.flows; lane++) {
+      let idx = lane * Math.floor(shuffled.length / cfg.flows);
       const runLane = async () => {
-        // Stagger start
-        await delay(lane * 500);
+        await delay(lane * cfg.laneStagger);
         while (!cancelled()) {
           const rel = shuffled[idx % shuffled.length];
-          await runOneFlow(rel, svgEl, cancelled, wrapperEl);
+          await runOneFlow(rel, svgEl, cancelled, wrapperEl, animPhase);
           if (cancelled()) break;
-          // Small random gap between flows in this lane
-          await delay(200 + Math.random() * 400);
+          await delay(cfg.gapMin + Math.random() * (cfg.gapMax - cfg.gapMin));
           idx++;
         }
       };
@@ -713,15 +732,15 @@ function useDataFlowAnimation(containerRef, wrapperRef, svgReady, isAnimating) {
         svgEl.querySelectorAll(".erd-line-active").forEach(el => el.classList.remove("erd-line-active"));
         svgEl.querySelectorAll("[data-flow-dot]").forEach(el => el.remove());
       }
-      // Clean up HTML uplift dots
       if (wrapperEl) {
         wrapperEl.querySelectorAll("[data-uplift-dot]").forEach(el => el.remove());
       }
     };
-  }, [containerRef, wrapperRef, svgReady, isAnimating]);
+  }, [containerRef, wrapperRef, svgReady, isAnimating, animPhase]);
 }
 
 /* ─── SQL Engine visual + rising dots ──────────────────────────────── */
+const CPU_COLOR = T.primary; // "#3B9EFF" blue
 const ENGINE_CSS = `
 @keyframes engine-pulse {
   0%, 100% { box-shadow: 0 0 15px ${NV}44, 0 0 30px ${NV}22, inset 0 0 15px ${NV}11; }
@@ -732,11 +751,13 @@ const ENGINE_CSS = `
   50%  { width: 90%; opacity: 1; }
   100% { width: 20%; opacity: 0.4; }
 }
-@keyframes dot-rise {
-  0%   { transform: translateY(0); opacity: 0; }
-  10%  { opacity: 0.9; }
-  85%  { opacity: 0.9; }
-  100% { transform: translateY(-100%); opacity: 0; }
+@keyframes cpu-pulse {
+  0%, 100% { box-shadow: 0 0 12px ${CPU_COLOR}44, 0 0 24px ${CPU_COLOR}22; }
+  50%      { box-shadow: 0 0 20px ${CPU_COLOR}88, 0 0 40px ${CPU_COLOR}44; }
+}
+@keyframes gpu-pulse {
+  0%, 100% { box-shadow: 0 0 12px ${NV}44, 0 0 24px ${NV}22; }
+  50%      { box-shadow: 0 0 20px ${NV}88, 0 0 40px ${NV}44; }
 }
 `;
 
@@ -746,10 +767,10 @@ function SQLEngineBox({ animating }) {
       position: "relative", zIndex: 2,
       margin: "0 auto 0", width: "fit-content", minWidth: 340,
       padding: "10px 28px 12px",
-      background: "#111a10",
-      border: `2px solid ${NV}88`,
+      background: T.surface2,
+      border: `2px solid ${T.border}`,
       borderRadius: 10,
-      animation: animating ? "engine-pulse 2.5s ease-in-out infinite" : "none",
+      boxShadow: animating ? `0 0 20px ${T.border}` : "none",
       display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
     }}>
       {/* Title */}
@@ -758,9 +779,8 @@ function SQLEngineBox({ animating }) {
         <span style={{
           fontSize: 15, fontWeight: 800, letterSpacing: 2,
           fontFamily: "'IBM Plex Mono', monospace",
-          color: NV, textTransform: "uppercase",
-          textShadow: `0 0 12px ${NV}88`,
-        }}>GPU SQL Engine</span>
+          color: T.text, textTransform: "uppercase",
+        }}>SQL Engine</span>
         <span style={{ fontSize: 18 }}>⚡</span>
       </div>
       {/* Activity bars */}
@@ -768,7 +788,7 @@ function SQLEngineBox({ animating }) {
         {[0, 0.4, 0.8, 1.2].map((d, i) => (
           <div key={i} style={{
             flex: 1, height: 3, borderRadius: 2,
-            background: `${NV}33`, overflow: "hidden",
+            background: `${T.muted}44`, overflow: "hidden",
           }}>
             <div style={{
               height: "100%", borderRadius: 2,
@@ -781,9 +801,88 @@ function SQLEngineBox({ animating }) {
       </div>
       {/* Subtitle */}
       <span style={{
-        fontSize: 9, color: `${NV}99`, fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 9, color: T.muted, fontFamily: "'IBM Plex Mono', monospace",
         letterSpacing: 1, textTransform: "uppercase",
-      }}>Processing · Accelerated Query Execution</span>
+      }}>Query Processing</span>
+    </div>
+  );
+}
+
+function ProcessorBoxes({ animPhase, animating }) {
+  const cpuActive = animating && animPhase === "cpu";
+  const gpuActive = animating && animPhase === "gpu";
+
+  const boxBase = {
+    flex: 1, maxWidth: 180, padding: "8px 16px 10px",
+    borderRadius: 8, display: "flex", flexDirection: "column",
+    alignItems: "center", gap: 4,
+    transition: "opacity 0.6s, box-shadow 0.6s, border-color 0.6s",
+  };
+
+  return (
+    <div style={{ display: "flex", justifyContent: "center", gap: 24, margin: "12px auto 0", maxWidth: 420 }}>
+      {/* CPU Box */}
+      <div data-cpu-box style={{
+        ...boxBase,
+        background: cpuActive ? `${CPU_COLOR}11` : T.surface2,
+        border: `2px solid ${cpuActive ? CPU_COLOR : T.border}`,
+        opacity: gpuActive ? 0.3 : 1,
+        animation: cpuActive ? "cpu-pulse 2s ease-in-out infinite" : "none",
+      }}>
+        <span style={{
+          fontSize: 13, fontWeight: 800, letterSpacing: 2,
+          fontFamily: "'IBM Plex Mono', monospace",
+          color: cpuActive ? CPU_COLOR : T.sub, textTransform: "uppercase",
+        }}>CPU</span>
+        {/* Single activity bar (serial) */}
+        <div style={{ width: "100%", height: 3, borderRadius: 2, background: `${CPU_COLOR}22`, overflow: "hidden" }}>
+          <div style={{
+            height: "100%", borderRadius: 2,
+            background: CPU_COLOR,
+            animation: cpuActive ? "engine-bar 2.5s ease-in-out infinite" : "none",
+            width: "20%",
+          }} />
+        </div>
+        <span style={{
+          fontSize: 8, color: cpuActive ? `${CPU_COLOR}99` : T.muted,
+          fontFamily: "'IBM Plex Mono', monospace", letterSpacing: 1, textTransform: "uppercase",
+        }}>Serial Processing</span>
+      </div>
+
+      {/* GPU Box */}
+      <div data-gpu-box style={{
+        ...boxBase,
+        background: gpuActive ? `${NV}11` : T.surface2,
+        border: `2px solid ${gpuActive ? NV : T.border}`,
+        opacity: cpuActive ? 0.3 : 1,
+        animation: gpuActive ? "gpu-pulse 2s ease-in-out infinite" : "none",
+      }}>
+        <span style={{
+          fontSize: 13, fontWeight: 800, letterSpacing: 2,
+          fontFamily: "'IBM Plex Mono', monospace",
+          color: gpuActive ? NV : T.sub, textTransform: "uppercase",
+        }}>GPU</span>
+        {/* Multiple activity bars (parallel) */}
+        <div style={{ display: "flex", gap: 3, width: "100%" }}>
+          {[0, 0.3, 0.6, 0.9, 1.2].map((d, i) => (
+            <div key={i} style={{
+              flex: 1, height: 3, borderRadius: 2,
+              background: `${NV}22`, overflow: "hidden",
+            }}>
+              <div style={{
+                height: "100%", borderRadius: 2,
+                background: NV,
+                animation: gpuActive ? `engine-bar ${1.2 + i * 0.2}s ease-in-out ${d}s infinite` : "none",
+                width: "20%",
+              }} />
+            </div>
+          ))}
+        </div>
+        <span style={{
+          fontSize: 8, color: gpuActive ? `${NV}99` : T.muted,
+          fontFamily: "'IBM Plex Mono', monospace", letterSpacing: 1, textTransform: "uppercase",
+        }}>Parallel Processing</span>
+      </div>
     </div>
   );
 }
@@ -856,6 +955,18 @@ export default function DataScale() {
   const [erdZoom, setErdZoom] = useState(0.08);
   const erdScrollRef = useRef(null);
   const [gifState, setGifState] = useState(null); // null | { phase, frame, total }
+  const [animPhase, setAnimPhase] = useState("cpu"); // "cpu" | "gpu"
+
+  // Cycle animPhase between "cpu" and "gpu" every 8 seconds while animating on ERD view
+  useEffect(() => {
+    if (!animating || view !== "table") { setAnimPhase("cpu"); return; }
+    // Reset to CPU when entering the view
+    setAnimPhase("cpu");
+    const interval = setInterval(() => {
+      setAnimPhase(p => p === "cpu" ? "gpu" : "cpu");
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [animating, view]);
 
   // Fetch SVG for inline rendering — patch width/height to scale in container
   useEffect(() => {
@@ -890,7 +1001,7 @@ export default function DataScale() {
     setSvgReady(true);
   }, [svgContent]);
 
-  useDataFlowAnimation(svgContainerRef, animWrapperRef, svgReady, animating);
+  useDataFlowAnimation(svgContainerRef, animWrapperRef, svgReady, animating, animPhase);
 
   // Abort GIF recording if view changes away from "table"
   useEffect(() => {
@@ -1002,7 +1113,7 @@ export default function DataScale() {
             </div>
 
             {/* SQL Engine + rising dots + ERD */}
-            <div ref={animWrapperRef} style={{ position: "relative" }}>
+            <div ref={animWrapperRef} style={{ position: "relative", overflow: "hidden" }}>
               {/* Recording overlay */}
               {gifState && (
                 <div data-gif-overlay style={{
@@ -1023,9 +1134,8 @@ export default function DataScale() {
                 </div>
               )}
               <SQLEngineBox animating={animating} />
-              <div style={{ position: "relative", height: 100 }}>
-                <RisingDots animating={animating} height={100} />
-              </div>
+              <ProcessorBoxes animPhase={animPhase} animating={animating} />
+              <div style={{ height: 20 }} />
               <div
                 ref={svgContainerRef}
                 dangerouslySetInnerHTML={{ __html: svgContent || "" }}
