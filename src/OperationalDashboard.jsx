@@ -43,7 +43,7 @@ const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 function useDataRefresh() {
   const [tick, setTick] = useState(0);
-  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [lastRefresh, setLastRefresh] = useState(() => new Date(Date.now() - 5 * 60 * 60 * 1000));
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
@@ -812,16 +812,19 @@ function ActionModal({ alert, onClose, onDismiss }) {
 /* ─── Refresh timer display ─────────────────────────────────────────── */
 function RefreshTimer({ lastRefresh, isRefreshing, now }) {
   const elapsed = Math.floor((now - lastRefresh) / 1000);
-  const elapsedMin = Math.floor(elapsed / 60);
+  const elapsedHrs = Math.floor(elapsed / 3600);
+  const elapsedMin = Math.floor((elapsed % 3600) / 60);
   const elapsedSec = elapsed % 60;
-  const remaining = Math.max(0, 5 * 60 - elapsed);
+  const remaining = Math.max(0, 5 * 60 - (elapsed % (5 * 60)));
   const remainingMin = Math.floor(remaining / 60);
   const remainingSec = remaining % 60;
-  const progress = Math.min(elapsed / (5 * 60), 1);
+  const progress = Math.min((elapsed % (5 * 60)) / (5 * 60), 1);
 
-  const agoStr = elapsedMin > 0
-    ? `${elapsedMin}m ${elapsedSec}s ago`
-    : `${elapsedSec}s ago`;
+  const agoStr = elapsedHrs > 0
+    ? `${elapsedHrs}h ${elapsedMin}m ago`
+    : elapsedMin > 0
+      ? `${elapsedMin}m ${elapsedSec}s ago`
+      : `${elapsedSec}s ago`;
   const nextStr = remaining > 0
     ? `${remainingMin}m ${remainingSec}s`
     : "now";
