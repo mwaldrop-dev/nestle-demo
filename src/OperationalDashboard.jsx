@@ -146,7 +146,7 @@ function makeAlerts() {
   const now = new Date();
   const fmt = d => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
   return [
-    { id:1, time: fmt(new Date(now - 3*60000)),  sev:"critical", msg:"Milk Pwd stock below safety threshold — cover remaining", category:"Inventory" },
+    { id:1, time: fmt(now),                       sev:"critical", msg:"Milk Pwd stock below safety threshold — cover remaining", category:"Inventory" },
     { id:2, time: fmt(new Date(now - 18*60000)), sev:"warning",  msg:"Fonterra OTD dropped — shipments delayed",                category:"Supplier"  },
     { id:3, time: fmt(new Date(now - 32*60000)), sev:"warning",  msg:"TRK-447 temp trending toward 4°C ceiling — monitor advised", category:"Cold Chain"},
     { id:4, time: fmt(new Date(now - 89*60000)), sev:"info",     msg:"Palm Oil inventory approaching reorder point",             category:"Inventory" },
@@ -328,8 +328,22 @@ function KpiStrip({ kpis, tick }) {
 /* ─── Alerts panel ───────────────────────────────────────────────────── */
 function AlertsPanel({ alerts, onAct }) {
   const [filter, setFilter] = useState("All");
+  const [criticalArrived, setCriticalArrived] = useState(false);
+  const justArrived = useRef(false);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      justArrived.current = true;
+      setCriticalArrived(true);
+      // Reset the "just arrived" flash after the animation
+      setTimeout(() => { justArrived.current = false; }, 1200);
+    }, 2500);
+    return () => clearTimeout(id);
+  }, []);
+
   const cats = ["All", "Supplier", "Inventory", "Cold Chain"];
-  const visible = filter === "All" ? alerts : alerts.filter(a => a.category === filter);
+  const displayAlerts = criticalArrived ? alerts : alerts.filter(a => a.id !== 1);
+  const visible = filter === "All" ? displayAlerts : displayAlerts.filter(a => a.category === filter);
   const sevIcon = { critical: "🔴", warning: "🟡", info: "🔵" };
   return (
     <Card title="Active Alerts" subtitle="Last refreshed 2 min ago" action="View all →">
@@ -351,12 +365,13 @@ function AlertsPanel({ alerts, onAct }) {
             padding: "9px 12px", borderRadius: 6,
             background: a.sev === "critical" ? T.redBg : a.sev === "warning" ? T.amberBg : T.bg,
             border: `1px solid ${a.sev === "critical" ? T.red+"33" : a.sev === "warning" ? T.amber+"33" : T.border}`,
+            ...(a.id === 1 && criticalArrived ? { animation: "alertSlideIn 0.4s ease-out" } : {}),
           }}>
             <span style={{ fontSize: 12, marginTop: 1 }}>{sevIcon[a.sev]}</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, color: T.text, lineHeight: 1.45 }}>{a.msg}</div>
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                <span style={{ fontSize: 10, color: T.muted, fontFamily: "monospace" }}>{a.time}</span>
+                <span style={{ fontSize: 10, color: T.muted, fontFamily: "monospace" }}>{a.id === 1 ? "Just now" : a.time}</span>
                 <Badge status={a.sev === "critical" ? "critical" : a.sev === "warning" ? "warning" : "ok"} label={a.category} />
               </div>
             </div>
@@ -562,7 +577,7 @@ const NAV_ITEMS = [
 ];
 
 /* ─── Action Modal ──────────────────────────────────────────────────── */
-function ActionModal({ alert, onClose }) {
+function ActionModal({ alert, onClose, onDismiss }) {
   const [selected, setSelected] = useState(0);
   const [phase, setPhase] = useState("idle"); // idle | confirming | success
 
@@ -583,6 +598,7 @@ function ActionModal({ alert, onClose }) {
     setPhase("confirming");
     setTimeout(() => {
       setPhase("success");
+      if (onDismiss) onDismiss(alert.id);
       setTimeout(() => onClose(), 1500);
     }, 800);
   };
@@ -887,6 +903,7 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
 
   // ── Action modal ──
   const [actionAlert, setActionAlert] = useState(null);
+  const [dismissedAlerts, setDismissedAlerts] = useState(new Set());
 
   // ── Accelerated time mode (toggle) ──
   const [accelOn, setAccelOn] = useState(false);
@@ -1026,7 +1043,7 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
 
           {/* Row 2: alerts + supplier table */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 14, marginTop: 14 }}>
-            <AlertsPanel alerts={data.alerts} onAct={setActionAlert} />
+            <AlertsPanel alerts={data.alerts.filter(a => !dismissedAlerts.has(a.id))} onAct={setActionAlert} />
             <SupplierTable suppliers={data.suppliers} />
           </div>
 
@@ -1048,7 +1065,7 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
       </div>
 
       {/* Action modal */}
-      {actionAlert && <ActionModal alert={actionAlert} onClose={() => setActionAlert(null)} />}
+      {actionAlert && <ActionModal alert={actionAlert} onClose={() => setActionAlert(null)} onDismiss={(id) => setDismissedAlerts(prev => new Set(prev).add(id))} />}
     </div>
   );
 }
@@ -1199,6 +1216,7 @@ export default function OperationalDashboard() {
     const style = document.createElement("style");
     style.textContent = `
       @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+      @keyframes alertSlideIn { from { opacity:0; transform:translateY(-10px); max-height:0; } to { opacity:1; transform:translateY(0); max-height:120px; } }
       @keyframes modalFadeIn { from { opacity:0; transform:translateY(16px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
       @keyframes modalBackdropIn { from { opacity:0; } to { opacity:1; } }
     `;
