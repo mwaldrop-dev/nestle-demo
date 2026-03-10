@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   AreaChart, Area, LineChart, Line, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -562,17 +562,93 @@ function RefreshTimer({ lastRefresh, isRefreshing, now }) {
   );
 }
 
+/* ─── Toggle switch ─────────────────────────────────────────────────── */
+function ToggleSwitch({ on, onToggle, label }) {
+  return (
+    <div
+      onClick={onToggle}
+      style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", userSelect: "none" }}
+    >
+      <div style={{
+        width: 34, height: 18, borderRadius: 9, position: "relative",
+        background: on ? T.primary : "#2A3347",
+        transition: "background 0.25s",
+        boxShadow: on ? `0 0 8px ${T.primary}55` : "none",
+      }}>
+        <div style={{
+          position: "absolute", top: 2, left: on ? 18 : 2,
+          width: 14, height: 14, borderRadius: "50%",
+          background: on ? "#fff" : "#7A95B0",
+          transition: "left 0.25s, background 0.25s",
+        }} />
+      </div>
+      <span style={{
+        fontSize: 10, fontWeight: 700, letterSpacing: 1,
+        fontFamily: "'IBM Plex Mono', monospace", textTransform: "uppercase",
+        color: on ? T.primary : T.muted, transition: "color 0.25s",
+      }}>{label}</span>
+    </div>
+  );
+}
+
+/* ─── Accelerated-time helper ───────────────────────────────────────── */
+const ACCEL_SIM_STEP = 5 * 60 * 1000;   // 5 simulated minutes per tick
+const ACCEL_TICK_MS  = 2000;             // tick every 2 real seconds
+
+function generateAllData() {
+  const throughput = makeThroughput();
+  const otdHistory = makeOtdHistory();
+  const inventory  = makeInventoryDays();
+  const suppliers  = makeSuppliers();
+  const coldChain  = makeColdChain();
+  const alerts     = makeAlerts();
+  const factories  = makeFactories();
+  const kpis       = makeKpis(inventory, suppliers, coldChain, factories);
+  return { throughput, otdHistory, inventory, suppliers, coldChain, alerts, factories, kpis };
+}
+
 /* ─── Dashboard (accepts optional simulated time + data) ────────────── */
 function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
   const realNow = useClock();
   const { tick: autoTick, lastRefresh: autoLast, isRefreshing: autoRefreshing } = useDataRefresh();
   const autoData = useDashboardData(frozen ? 0 : (overrideTick ?? autoTick));
 
-  const now = simTime || realNow;
-  const data = overrideData || autoData;
-  const tick = overrideTick ?? autoTick;
-  const isRefreshing = frozen ? false : autoRefreshing;
-  const lastRefresh = frozen ? now : autoLast;
+  // ── Accelerated time mode (toggle) ──
+  const [accelOn, setAccelOn] = useState(false);
+  const [accelTick, setAccelTick] = useState(0);
+  const [accelTime, setAccelTime] = useState(() => new Date());
+  const [accelData, setAccelData] = useState(null);
+
+  // Reset simulated time when toggled on
+  const handleToggle = useCallback(() => {
+    setAccelOn(prev => {
+      if (!prev) {
+        // Turning ON — seed from now
+        setAccelTime(new Date());
+        setAccelTick(0);
+        setAccelData(generateAllData());
+      }
+      return !prev;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!accelOn) return;
+    const id = setInterval(() => {
+      setAccelTime(prev => new Date(prev.getTime() + ACCEL_SIM_STEP));
+      setAccelTick(t => t + 1);
+      setAccelData(generateAllData());
+    }, ACCEL_TICK_MS);
+    return () => clearInterval(id);
+  }, [accelOn]);
+
+  // Decide which source of truth to use
+  const useAccel = accelOn && !frozen && !overrideData;
+  const now = simTime || (useAccel ? accelTime : realNow);
+  const data = overrideData || (useAccel ? accelData : autoData);
+  const tick = overrideTick ?? (useAccel ? accelTick : autoTick);
+  const isRefreshing = frozen ? false : (!useAccel && autoRefreshing);
+  const lastRefresh = frozen ? now : (useAccel ? accelTime : autoLast);
 
   const timeStr = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const dateStr = now.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
@@ -629,17 +705,42 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
             <span style={{ fontSize: 16, fontWeight: 700, color: T.text }}>Operations Overview</span>
             <span style={{ fontSize: 12, color: T.muted, marginLeft: 12 }}>{dateStr}</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            {/* Accelerated-time toggle (hidden when used inside DemoView) */}
+            {!frozen && !overrideData && (
+              <ToggleSwitch on={accelOn} onToggle={handleToggle} label="Accel" />
+            )}
+
+            {/* Status pill */}
             <div style={{
               display: "flex", alignItems: "center", gap: 7,
-              background: T.greenBg, border: `1px solid ${T.green}33`,
+              background: useAccel ? "#3B9EFF18" : T.greenBg,
+              border: `1px solid ${useAccel ? T.primary + "44" : T.green + "33"}`,
               borderRadius: 20, padding: "4px 12px",
             }}>
-              <div style={{ width: 7, height: 7, borderRadius: "50%", background: T.green, boxShadow: `0 0 6px ${T.green}` }} />
-              <span style={{ fontSize: 11, color: T.green, fontWeight: 700, fontFamily: "monospace" }}>LIVE</span>
+              <div style={{
+                width: 7, height: 7, borderRadius: "50%",
+                background: useAccel ? T.primary : T.green,
+                boxShadow: `0 0 6px ${useAccel ? T.primary : T.green}`,
+              }} />
+              <span style={{
+                fontSize: 11, fontWeight: 700, fontFamily: "monospace",
+                color: useAccel ? T.primary : T.green,
+              }}>{useAccel ? "ACCEL" : "LIVE"}</span>
               <span style={{ fontSize: 11, color: T.sub, fontFamily: "monospace" }}>{timeStr}</span>
+              {useAccel && (
+                <span style={{ fontSize: 10, color: T.muted, fontFamily: "monospace" }}>
+                  · 5m/{ACCEL_TICK_MS / 1000}s
+                </span>
+              )}
             </div>
-            <RefreshTimer lastRefresh={lastRefresh} isRefreshing={isRefreshing} now={now} />
+
+            {!useAccel && <RefreshTimer lastRefresh={lastRefresh} isRefreshing={isRefreshing} now={now} />}
+            {useAccel && (
+              <span style={{ fontSize: 11, color: T.muted, fontFamily: "monospace" }}>
+                {accelTick} refreshes
+              </span>
+            )}
           </div>
         </div>
 
