@@ -436,8 +436,8 @@ export default function OperationalDashboard() {
       <div style={{ width: 180, minWidth: 180, background: T.nav, display: "flex", flexDirection: "column" }}>
         {/* Logo */}
         <div style={{ padding: "18px 20px 14px", borderBottom: "1px solid #ffffff15" }}>
-          <div style={{ background: T.nestle, color: "#fff", fontWeight: 900, fontSize: 13, letterSpacing: 3, padding: "5px 12px", borderRadius: 4, display: "inline-block" }}>NESTLÉ</div>
-          <div style={{ fontSize: 10, color: T.navText, marginTop: 8, lineHeight: 1.4 }}>Supply Chain<br/>Operations Centre</div>
+          <img src="/nestle-logo.svg" alt="Nestlé" style={{ width: 80, height: "auto", marginBottom: 8 }} />
+          <div style={{ fontSize: 10, color: T.navText, lineHeight: 1.4 }}>Supply Chain<br/>Operations Centre</div>
         </div>
 
         {/* Nav */}
