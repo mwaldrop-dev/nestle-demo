@@ -137,13 +137,6 @@ function OtdOverviewScreen({ viewBy, onViewBy }) {
   const card = { border: `1px solid ${t.borderDark}`, borderRadius: 6, background: t.surface, padding: 16, fontFamily: F };
   const pieData = OTD_OV_PIE.map(d => ({ ...d, color: t[d.colorKey] }));
   const RADIAN = Math.PI / 180;
-  const renderCenter = ({ viewBox }) => {
-    const { cx, cy } = viewBox;
-    return (<>
-      <text x={cx} y={cy - 12} textAnchor="middle" style={{ fontSize: 13, fill: t.sub, fontFamily: F }}>Total Count</text>
-      <text x={cx} y={cy + 14} textAnchor="middle" style={{ fontSize: 22, fontWeight: 800, fill: t.text, fontFamily: F }}>5,359</text>
-    </>);
-  };
   const renderLabel = ({ cx, cy, midAngle, outerRadius, name, value }) => {
     const r = outerRadius + 30;
     const x = cx + r * Math.cos(-midAngle * RADIAN);
@@ -152,7 +145,7 @@ function OtdOverviewScreen({ viewBy, onViewBy }) {
       style={{ fontSize: 12, fill: t.text, fontFamily: F }}>{name} {value}%</text>);
   };
   return (
-    <div style={{ padding: "16px 24px" }}>
+    <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
       <DateControlsBar />
       <ViewByToggle active={viewBy} onSelect={onViewBy} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
@@ -569,8 +562,7 @@ function OtdApp() {
   useEffect(() => { document.body.style.background = theme.bg; document.body.style.margin = "0"; }, [theme.bg]);
 
   /* Map between main tabs ↔ sub-tabs so they always stay in sync */
-  const MAIN_TO_SUB = { "Executive Summary": "Overview", "Order to Delivery": "Order to Delivery", "Delivery to Billing": "Delivery to Billing", "Billing to POD": "Billing to POD" };
-  const SUB_TO_MAIN = { "Overview": "Executive Summary", "Order to Delivery": "Order to Delivery", "Delivery to Billing": "Delivery to Billing", "Billing to POD": "Billing to POD" };
+  const MAIN_TO_SUB = { "Executive Summary": "Overview", "Order to Delivery": "Overview", "Delivery to Billing": "Delivery to Billing", "Billing to POD": "Billing to POD" };
 
   const handleMainTab = (tab) => {
     const mapped = MAIN_TO_SUB[tab];
@@ -580,13 +572,17 @@ function OtdApp() {
 
   const handleSubTab = (tab) => {
     setSubTab(tab);
-    setMainTab(SUB_TO_MAIN[tab] || mainTab);
+    /* If clicking a non-Overview sub-tab, sync mainTab to match */
+    if (tab !== "Overview") setMainTab(tab);
   };
 
   const renderContent = () => {
     switch (subTab) {
       case "Overview":
-        return <ExecSummaryOverview viewBy={viewBy} onViewBy={setViewBy} />;
+        /* Overview shows different content depending on which main tab is active */
+        return mainTab === "Order to Delivery"
+          ? <OtdOverviewScreen viewBy={viewBy} onViewBy={setViewBy} />
+          : <ExecSummaryOverview viewBy={viewBy} onViewBy={setViewBy} />;
       case "Order to Delivery":
         return <OtdScreen viewBy={viewBy} onViewBy={setViewBy} />;
       case "Delivery to Billing":
