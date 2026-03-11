@@ -580,6 +580,7 @@ function OtdApp() {
        DTB and BTP screens only appear via their own main tabs. */
     if (mainTab === "Executive Summary") {
       if (subTab === "Overview") return <ExecSummaryOverview viewBy={viewBy} onViewBy={setViewBy} />;
+      if (subTab === "Billing to POD") return <DtbScreen viewBy={viewBy} onViewBy={setViewBy} />;
       return <OtdScreen viewBy={viewBy} onViewBy={setViewBy} />;
     }
     if (mainTab === "Order to Delivery") {
