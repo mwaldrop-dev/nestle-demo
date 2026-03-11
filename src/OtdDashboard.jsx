@@ -58,13 +58,11 @@ const EXEC_TIMELINE_DATA = [
   { period: "Beyond Next Day", orders: 244 },
 ];
 
-function ExecSummaryOverview({ sidebar, setSidebar, viewBy, onViewBy }) {
+function ExecSummaryOverview({ viewBy, onViewBy }) {
   const t = useT();
   const card = { border: `1px solid ${t.borderDark}`, borderRadius: 6, background: t.surface, padding: 16, fontFamily: F };
   return (
-    <div style={{ display: "flex", flex: 1 }}>
-      <SidebarNav active={sidebar} onSelect={setSidebar} />
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
+    <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
       <DateControlsBar />
       <ViewByToggle active={viewBy} onSelect={onViewBy} />
       <div style={{ fontSize: 16, fontWeight: 700, color: t.text, marginBottom: 14 }}>Order to Delivery</div>
@@ -115,7 +113,6 @@ function ExecSummaryOverview({ sidebar, setSidebar, viewBy, onViewBy }) {
             <Bar dataKey="orders" fill={t.barBlue} radius={[2,2,0,0]} barSize={80} label={{ position: "top", fill: t.text, fontSize: 11, fontWeight: 700 }} />
           </BarChart>
         </ResponsiveContainer>
-      </div>
       </div>
     </div>
   );
@@ -502,21 +499,18 @@ function BottomTable() {
 /* ═══════════════════════════════════════════════════════════════════
    SCREEN: Order to Delivery (with sidebar)
    ═══════════════════════════════════════════════════════════════════ */
-function OtdScreen({ sidebar, setSidebar, viewBy, onViewBy }) {
+function OtdScreen({ viewBy, onViewBy }) {
   return (
-    <div style={{ display: "flex", flex: 1 }}>
-      <SidebarNav active={sidebar} onSelect={setSidebar} />
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
-        <DateControlsBar />
-        <KpiRow cards={KPI_OTD} />
-        <ViewByToggle active={viewBy} onSelect={onViewBy} />
-        <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1fr", gap: 14 }}>
-          <ComboChartCard title="Count of Orders at Risk" data={COMBO_OTD}
-            barLabel1="Total Orders" barLabel2="Orders at Risk" lineLabel="(%) Risky Orders (OTD)" yLabel="Orders" />
-          <DonutPieCard title="Distribution of Risk" pieKeys={PIE_OTD} />
-        </div>
-        <BottomTable />
+    <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
+      <DateControlsBar />
+      <KpiRow cards={KPI_OTD} />
+      <ViewByToggle active={viewBy} onSelect={onViewBy} />
+      <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1fr", gap: 14 }}>
+        <ComboChartCard title="Count of Orders at Risk" data={COMBO_OTD}
+          barLabel1="Total Orders" barLabel2="Orders at Risk" lineLabel="(%) Risky Orders (OTD)" yLabel="Orders" />
+        <DonutPieCard title="Distribution of Risk" pieKeys={PIE_OTD} />
       </div>
+      <BottomTable />
     </div>
   );
 }
@@ -526,11 +520,9 @@ function OtdScreen({ sidebar, setSidebar, viewBy, onViewBy }) {
    ═══════════════════════════════════════════════════════════════════ */
 const fmtM = v => { if (v >= 1000000) return (v / 1000000).toFixed(2) + "M"; if (v >= 1000) return (v / 1000).toFixed(0) + "K"; return v; };
 
-function DtbScreen({ sidebar, setSidebar, viewBy, onViewBy }) {
+function DtbScreen({ viewBy, onViewBy }) {
   return (
-    <div style={{ display: "flex", flex: 1 }}>
-      <SidebarNav active={sidebar} onSelect={setSidebar} />
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
+    <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
       <DateControlsBar />
       <KpiRow cards={KPI_DTB} />
       <ViewByToggle active={viewBy} onSelect={onViewBy} />
@@ -540,7 +532,6 @@ function DtbScreen({ sidebar, setSidebar, viewBy, onViewBy }) {
           yLabel="Shipments" fmtY={fmtM} />
         <DonutPieCard title="Distribution of Risk" pieKeys={PIE_DTB} />
       </div>
-      </div>
     </div>
   );
 }
@@ -548,11 +539,9 @@ function DtbScreen({ sidebar, setSidebar, viewBy, onViewBy }) {
 /* ═══════════════════════════════════════════════════════════════════
    SCREEN: Billing to POD
    ═══════════════════════════════════════════════════════════════════ */
-function BtpScreen({ sidebar, setSidebar, viewBy, onViewBy }) {
+function BtpScreen({ viewBy, onViewBy }) {
   return (
-    <div style={{ display: "flex", flex: 1 }}>
-      <SidebarNav active={sidebar} onSelect={setSidebar} />
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
+    <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
       <DateControlsBar />
       <KpiRow cards={KPI_BTP} />
       <ViewByToggle active={viewBy} onSelect={onViewBy} />
@@ -561,7 +550,6 @@ function BtpScreen({ sidebar, setSidebar, viewBy, onViewBy }) {
           barLabel1="Total Shipments" barLabel2="Shipments at Risk" lineLabel="Percentage of Shipments at Risk"
           yLabel="Shipments" />
         <DonutPieCard title="Distribution of Risk" pieKeys={PIE_BTP} />
-      </div>
       </div>
     </div>
   );
@@ -598,15 +586,15 @@ function OtdApp() {
   const renderContent = () => {
     switch (subTab) {
       case "Overview":
-        return <ExecSummaryOverview sidebar={sidebar} setSidebar={setSidebar} viewBy={viewBy} onViewBy={setViewBy} />;
+        return <ExecSummaryOverview viewBy={viewBy} onViewBy={setViewBy} />;
       case "Order to Delivery":
-        return <OtdScreen sidebar={sidebar} setSidebar={setSidebar} viewBy={viewBy} onViewBy={setViewBy} />;
+        return <OtdScreen viewBy={viewBy} onViewBy={setViewBy} />;
       case "Delivery to Billing":
-        return <DtbScreen sidebar={sidebar} setSidebar={setSidebar} viewBy={viewBy} onViewBy={setViewBy} />;
+        return <DtbScreen viewBy={viewBy} onViewBy={setViewBy} />;
       case "Billing to POD":
-        return <BtpScreen sidebar={sidebar} setSidebar={setSidebar} viewBy={viewBy} onViewBy={setViewBy} />;
+        return <BtpScreen viewBy={viewBy} onViewBy={setViewBy} />;
       default:
-        return <ExecSummaryOverview sidebar={sidebar} setSidebar={setSidebar} viewBy={viewBy} onViewBy={setViewBy} />;
+        return <ExecSummaryOverview viewBy={viewBy} onViewBy={setViewBy} />;
     }
   };
 
