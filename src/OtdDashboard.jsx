@@ -571,13 +571,19 @@ function OtdApp() {
 
   useEffect(() => { document.body.style.background = theme.bg; document.body.style.margin = "0"; }, [theme.bg]);
 
-  /* When main tab changes, reset sub-tab to a sensible default */
+  /* Map between main tabs ↔ sub-tabs so they always stay in sync */
+  const MAIN_TO_SUB = { "Executive Summary": "Overview", "Order to Delivery": "Order to Delivery", "Delivery to Billing": "Delivery to Billing", "Billing to POD": "Billing to POD" };
+  const SUB_TO_MAIN = { "Overview": "Executive Summary", "Order to Delivery": "Order to Delivery", "Delivery to Billing": "Delivery to Billing", "Billing to POD": "Billing to POD" };
+
   const handleMainTab = (tab) => {
-    setMainTab(tab);
-    if (tab === "Executive Summary") setSubTab("Overview");
-    else if (tab === "Order to Delivery") setSubTab("Order to Delivery");
-    else if (tab === "Delivery to Billing") setSubTab("Delivery to Billing");
-    else if (tab === "Billing to POD") setSubTab("Billing to POD");
+    const mapped = MAIN_TO_SUB[tab];
+    if (mapped) { setMainTab(tab); setSubTab(mapped); }
+    /* Admin & Historical Alert — no matching screen, ignore */
+  };
+
+  const handleSubTab = (tab) => {
+    setSubTab(tab);
+    setMainTab(SUB_TO_MAIN[tab] || mainTab);
   };
 
   const renderContent = () => {
@@ -599,7 +605,7 @@ function OtdApp() {
     <ThemeCtx.Provider value={theme}>
       <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: theme.bg, fontFamily: F, transition: "background 0.3s" }}>
         <HeaderBar activeTab={mainTab} onTabClick={handleMainTab} isDark={isDark} onThemeToggle={() => setIsDark(d => !d)} />
-        <SubHeaderTabs activeTab={subTab} onTabClick={setSubTab} />
+        <SubHeaderTabs activeTab={subTab} onTabClick={handleSubTab} />
         <div style={{ display: "flex", flex: 1 }}>
           {renderContent()}
         </div>
