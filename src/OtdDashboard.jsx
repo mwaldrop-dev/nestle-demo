@@ -562,8 +562,7 @@ function BtpScreen({ viewBy, onViewBy }) {
    MAIN APP — routes sub-tabs to screens
    ═══════════════════════════════════════════════════════════════════ */
 function OtdApp() {
-  const [mainTab, setMainTab] = useState("Executive Summary");
-  const [subTab, setSubTab] = useState("Overview");
+  const [activeTab, setActiveTab] = useState("Executive Summary");
   const [sidebar, setSidebar] = useState("Order to Delivery");
   const [viewBy, setViewBy] = useState("Count");
   const [isDark, setIsDark] = useState(true);
@@ -571,24 +570,9 @@ function OtdApp() {
 
   useEffect(() => { document.body.style.background = theme.bg; document.body.style.margin = "0"; }, [theme.bg]);
 
-  /* Map between main tabs ↔ sub-tabs so they always stay in sync */
-  const MAIN_TO_SUB = { "Executive Summary": "Overview", "Order to Delivery": "Order to Delivery", "Delivery to Billing": "Delivery to Billing", "Billing to POD": "Billing to POD" };
-  const SUB_TO_MAIN = { "Overview": "Executive Summary", "Order to Delivery": "Order to Delivery", "Delivery to Billing": "Delivery to Billing", "Billing to POD": "Billing to POD" };
-
-  const handleMainTab = (tab) => {
-    const mapped = MAIN_TO_SUB[tab];
-    if (mapped) { setMainTab(tab); setSubTab(mapped); }
-    /* Admin & Historical Alert — no matching screen, ignore */
-  };
-
-  const handleSubTab = (tab) => {
-    setSubTab(tab);
-    setMainTab(SUB_TO_MAIN[tab] || mainTab);
-  };
-
   const renderContent = () => {
-    switch (subTab) {
-      case "Overview":
+    switch (activeTab) {
+      case "Executive Summary":
         return <ExecSummaryOverview viewBy={viewBy} onViewBy={setViewBy} />;
       case "Order to Delivery":
         return <OtdScreen sidebar={sidebar} setSidebar={setSidebar} viewBy={viewBy} onViewBy={setViewBy} />;
@@ -604,8 +588,7 @@ function OtdApp() {
   return (
     <ThemeCtx.Provider value={theme}>
       <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: theme.bg, fontFamily: F, transition: "background 0.3s" }}>
-        <HeaderBar activeTab={mainTab} onTabClick={handleMainTab} isDark={isDark} onThemeToggle={() => setIsDark(d => !d)} />
-        <SubHeaderTabs activeTab={subTab} onTabClick={handleSubTab} />
+        <HeaderBar activeTab={activeTab} onTabClick={setActiveTab} isDark={isDark} onThemeToggle={() => setIsDark(d => !d)} />
         <div style={{ display: "flex", flex: 1 }}>
           {renderContent()}
         </div>
