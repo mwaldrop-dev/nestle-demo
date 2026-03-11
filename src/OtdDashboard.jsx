@@ -572,8 +572,6 @@ function OtdApp() {
 
   const handleSubTab = (tab) => {
     setSubTab(tab);
-    /* If clicking a non-Overview sub-tab, sync mainTab to match */
-    if (tab !== "Overview") setMainTab(tab);
   };
 
   const renderContent = () => {
