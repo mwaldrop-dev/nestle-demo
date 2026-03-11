@@ -502,7 +502,7 @@ function SupplyChainMap() {
 
   return (
     <Card title="European Supply Network" subtitle="14 nodes · 8 active routes" action="Expand →">
-      <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" style={{ width: "100%", display: "block" }}>
+      <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" style={{ width: "100%", maxHeight: 260, display: "block" }}>
         <defs>
           <filter id="shipGlow">
             <feGaussianBlur stdDeviation="4" result="blur" />
