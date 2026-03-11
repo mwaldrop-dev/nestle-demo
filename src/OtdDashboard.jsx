@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 import {
   ComposedChart, Bar, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 
-/* ─── Dark theme tokens ────────────────────────────────────────────── */
-const LT = {
+/* ─── Theme definitions ───────────────────────────────────────────── */
+const DARK = {
   bg:         "#0B0E14",
   surface:    "#141821",
   surface2:   "#111520",
@@ -38,7 +38,51 @@ const LT = {
   sub:        "#94A3B8",
   muted:      "#64748B",
   nestle:     "#E8002A",
+  toggleBg:   "#1E293B",
+  toggleKnob: "#F1F5F9",
+  toggleIcon: "☀️",
 };
+
+const LIGHT = {
+  bg:         "#F5F6FA",
+  surface:    "#FFFFFF",
+  surface2:   "#F0F1F5",
+  border:     "#E0E3EB",
+  borderDark: "#CBD0DC",
+  nav:        "#FFFFFF",
+  navText:    "#6B7280",
+  navActive:  "#1D4ED8",
+  navActiveBg:"#EFF6FF",
+  navBorder:  "#2563EB",
+  headerBg:   "#1E293B",
+  headerText: "#FFFFFF",
+  headerTab:  "#94A3B8",
+  headerTabAct:"#FFFFFF",
+  primary:    "#2563EB",
+  primaryLight:"#DBEAFE",
+  red:        "#EF4444",
+  amber:      "#F59E0B",
+  green:      "#10B981",
+  barBlue:    "#3B82F6",
+  barRed:     "#EF4444",
+  lineOrange: "#F97316",
+  pieCoral:   "#F87171",
+  pieBlue:    "#3B82F6",
+  pieYellow:  "#FBBF24",
+  pieGreen:   "#10B981",
+  pieRed:     "#DC2626",
+  piePurple:  "#8B5CF6",
+  text:       "#111827",
+  sub:        "#6B7280",
+  muted:      "#9CA3AF",
+  nestle:     "#E8002A",
+  toggleBg:   "#CBD5E1",
+  toggleKnob: "#1E293B",
+  toggleIcon: "🌙",
+};
+
+const ThemeCtx = createContext(DARK);
+const useT = () => useContext(ThemeCtx);
 
 /* ─── Static data ──────────────────────────────────────────────────── */
 const MAIN_TABS = ["Executive Summary", "Order to Delivery", "Delivery to Billing", "Billing to POD", "Admin", "Historical Alert"];
@@ -49,9 +93,9 @@ const SIDEBAR_ITEMS = [
   "History Alerts - OTD", "History Alerts - DTB", "History Alerts - BTP",
 ];
 
-const KPI_CARDS = [
+const KPI_RAW = [
   {
-    title: "Orders", color: LT.primary,
+    title: "Orders", colorKey: "primary",
     metrics: [
       { label: "Count of orders", value: "4,984" },
       { label: "Net Weight",      value: "8M" },
@@ -61,7 +105,7 @@ const KPI_CARDS = [
     ],
   },
   {
-    title: "Orders at Risk", color: LT.red,
+    title: "Orders at Risk", colorKey: "red",
     metrics: [
       { label: "Count of orders", value: "1,638" },
       { label: "Net Weight",      value: "2M" },
@@ -71,7 +115,7 @@ const KPI_CARDS = [
     ],
   },
   {
-    title: "Recommendation", color: LT.primary,
+    title: "Recommendation", colorKey: "primary",
     metrics: [
       { label: "Count of orders", value: "1,638" },
       { label: "Net Weight",      value: "2M" },
@@ -88,13 +132,13 @@ const COMBO_DATA = [
   { plant: "3052_BR DC Feira de Santana", total: 907,  atRisk: 394, pctRisky: 43.44 },
 ];
 
-const PIE_DATA = [
-  { name: "Auto Exception",     value: 58.45, color: LT.pieCoral },
-  { name: "Calendar",           value: 21.46, color: LT.pieBlue },
-  { name: "Manual Exception",   value: 9.50,  color: LT.pieYellow },
-  { name: "Routing Process T2", value: 5.38,  color: LT.pieGreen },
-  { name: "Manual Block",       value: 4.61,  color: LT.pieRed },
-  { name: "Opened sales do...", value: 0.60,  color: LT.piePurple },
+const PIE_KEYS = [
+  { name: "Auto Exception",     value: 58.45, colorKey: "pieCoral" },
+  { name: "Calendar",           value: 21.46, colorKey: "pieBlue" },
+  { name: "Manual Exception",   value: 9.50,  colorKey: "pieYellow" },
+  { name: "Routing Process T2", value: 5.38,  colorKey: "pieGreen" },
+  { name: "Manual Block",       value: 4.61,  colorKey: "pieRed" },
+  { name: "Opened sales do...", value: 0.60,  colorKey: "piePurple" },
 ];
 
 const TABLE_DATA = [
@@ -108,11 +152,36 @@ const TABLE_DATA = [
 
 const VIEW_BY_OPTIONS = ["Count", "PUM", "Value", "Weight"];
 
+/* ─── Theme toggle switch ─────────────────────────────────────────── */
+function ThemeToggle({ isDark, onToggle }) {
+  const t = useT();
+  return (
+    <div
+      onClick={onToggle}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      style={{
+        width: 44, height: 24, borderRadius: 12, cursor: "pointer",
+        background: t.toggleBg, position: "relative", marginLeft: 16,
+        transition: "background 0.25s", flexShrink: 0,
+      }}
+    >
+      <div style={{
+        width: 18, height: 18, borderRadius: "50%",
+        background: t.toggleKnob, position: "absolute", top: 3,
+        left: isDark ? 3 : 23, transition: "left 0.25s",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 10,
+      }}>{t.toggleIcon}</div>
+    </div>
+  );
+}
+
 /* ─── Header bar ───────────────────────────────────────────────────── */
-function HeaderBar({ activeTab, onTabClick }) {
+function HeaderBar({ activeTab, onTabClick, isDark, onThemeToggle }) {
+  const t = useT();
   return (
     <div style={{
-      background: LT.headerBg, display: "flex", alignItems: "center", height: 48,
+      background: t.headerBg, display: "flex", alignItems: "center", height: 48,
       padding: "0 20px", fontFamily: "'IBM Plex Sans', sans-serif",
     }}>
       <img src="/nestle-logo.svg" alt="Nestlé" style={{ height: 32, marginRight: 24, filter: "brightness(0) invert(1)", opacity: 0.9 }} />
@@ -120,33 +189,35 @@ function HeaderBar({ activeTab, onTabClick }) {
         {MAIN_TABS.map(tab => (
           <div key={tab} onClick={() => onTabClick(tab)} style={{
             padding: "12px 18px", cursor: "pointer",
-            color: activeTab === tab ? LT.headerTabAct : LT.headerTab,
+            color: activeTab === tab ? t.headerTabAct : t.headerTab,
             fontWeight: activeTab === tab ? 700 : 400, fontSize: 13,
-            borderBottom: activeTab === tab ? `2px solid ${LT.primary}` : "2px solid transparent",
+            borderBottom: activeTab === tab ? `2px solid ${t.primary}` : "2px solid transparent",
           }}>{tab}</div>
         ))}
       </div>
-      <div style={{ fontSize: 11, color: LT.headerTab, whiteSpace: "nowrap" }}>
+      <div style={{ fontSize: 11, color: t.headerTab, whiteSpace: "nowrap", textAlign: "right" }}>
         <span style={{ fontWeight: 600 }}>Last Refresh</span><br />
         2026-03-11 08:00:02
       </div>
+      <ThemeToggle isDark={isDark} onToggle={onThemeToggle} />
     </div>
   );
 }
 
 /* ─── Sub-header tabs ──────────────────────────────────────────────── */
 function SubHeaderTabs({ activeTab, onTabClick }) {
+  const t = useT();
   return (
     <div style={{
-      background: LT.surface, display: "flex", borderBottom: `2px solid ${LT.border}`,
+      background: t.surface, display: "flex", borderBottom: `2px solid ${t.border}`,
       fontFamily: "'IBM Plex Sans', sans-serif",
     }}>
       {SUB_TABS.map(tab => (
         <div key={tab} onClick={() => onTabClick(tab)} style={{
           padding: "10px 24px", cursor: "pointer", fontSize: 13,
-          color: activeTab === tab ? LT.navActive : LT.sub,
+          color: activeTab === tab ? t.navActive : t.sub,
           fontWeight: activeTab === tab ? 600 : 400,
-          borderBottom: activeTab === tab ? `2px solid ${LT.navBorder}` : "2px solid transparent",
+          borderBottom: activeTab === tab ? `2px solid ${t.navBorder}` : "2px solid transparent",
           marginBottom: -2,
         }}>{tab}</div>
       ))}
@@ -156,10 +227,11 @@ function SubHeaderTabs({ activeTab, onTabClick }) {
 
 /* ─── Sidebar ──────────────────────────────────────────────────────── */
 function SidebarNav({ active, onSelect }) {
+  const t = useT();
   return (
     <div style={{
-      width: 200, minWidth: 200, background: LT.nav,
-      borderRight: `1px solid ${LT.border}`, padding: "12px 0",
+      width: 200, minWidth: 200, background: t.nav,
+      borderRight: `1px solid ${t.border}`, padding: "12px 0",
       fontFamily: "'IBM Plex Sans', sans-serif", overflowY: "auto",
     }}>
       {SIDEBAR_ITEMS.map(item => {
@@ -167,10 +239,10 @@ function SidebarNav({ active, onSelect }) {
         return (
           <div key={item} onClick={() => onSelect(item)} style={{
             padding: "9px 16px", cursor: "pointer", fontSize: 13,
-            color: isActive ? LT.navActive : LT.navText,
+            color: isActive ? t.navActive : t.navText,
             fontWeight: isActive ? 700 : 400,
-            background: isActive ? LT.navActiveBg : "transparent",
-            borderLeft: isActive ? `3px solid ${LT.navBorder}` : "3px solid transparent",
+            background: isActive ? t.navActiveBg : "transparent",
+            borderLeft: isActive ? `3px solid ${t.navBorder}` : "3px solid transparent",
           }}>{item}</div>
         );
       })}
@@ -180,14 +252,15 @@ function SidebarNav({ active, onSelect }) {
 
 /* ─── Date controls ────────────────────────────────────────────────── */
 function DateControlsBar() {
+  const t = useT();
   const btnStyle = {
-    padding: "6px 16px", border: `1px solid ${LT.borderDark}`, borderRadius: 4,
-    background: LT.surface, color: LT.text, fontSize: 12, cursor: "pointer",
+    padding: "6px 16px", border: `1px solid ${t.borderDark}`, borderRadius: 4,
+    background: t.surface, color: t.text, fontSize: 12, cursor: "pointer",
     fontFamily: "'IBM Plex Sans', sans-serif",
   };
   const dateStyle = {
-    padding: "6px 10px", border: `1px solid ${LT.borderDark}`, borderRadius: 4,
-    background: LT.surface, color: LT.text, fontSize: 12, minWidth: 90,
+    padding: "6px 10px", border: `1px solid ${t.borderDark}`, borderRadius: 4,
+    background: t.surface, color: t.text, fontSize: 12, minWidth: 90,
     fontFamily: "'IBM Plex Sans', sans-serif",
   };
   return (
@@ -195,17 +268,17 @@ function DateControlsBar() {
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
         <button style={btnStyle}>Today</button>
         <button style={btnStyle}>Next Day</button>
-        <span style={{ fontSize: 12, color: LT.sub, marginLeft: 16 }}>Custom Date</span>
+        <span style={{ fontSize: 12, color: t.sub, marginLeft: 16 }}>Custom Date</span>
         <span style={dateStyle}>10/1/2025 &nbsp;📅</span>
         <span style={dateStyle}>3/31/2026 &nbsp;📅</span>
         <div style={{ flex: 1 }} />
         <button style={{
           padding: "8px 28px", border: "none", borderRadius: 4,
-          background: LT.primary, color: "#fff", fontSize: 13, fontWeight: 700,
+          background: t.primary, color: "#fff", fontSize: 13, fontWeight: 700,
           cursor: "pointer", fontFamily: "'IBM Plex Sans', sans-serif",
         }}>Filters</button>
       </div>
-      <div style={{ fontSize: 13, color: LT.text, marginBottom: 14 }}>
+      <div style={{ fontSize: 13, color: t.text, marginBottom: 14 }}>
         <strong>Date Selected:</strong>&nbsp; 01/Oct/2025 to 31/Mar/2026
       </div>
     </div>
@@ -214,19 +287,20 @@ function DateControlsBar() {
 
 /* ─── KPI cards ────────────────────────────────────────────────────── */
 function KpiCardRow() {
+  const t = useT();
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
-      {KPI_CARDS.map(card => (
+      {KPI_RAW.map(card => (
         <div key={card.title} style={{
-          border: `2px solid ${LT.borderDark}`, borderRadius: 6, padding: "14px 18px",
-          background: LT.surface, fontFamily: "'IBM Plex Sans', sans-serif",
+          border: `2px solid ${t.borderDark}`, borderRadius: 6, padding: "14px 18px",
+          background: t.surface, fontFamily: "'IBM Plex Sans', sans-serif",
         }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: LT.text, marginBottom: 10 }}>{card.title}</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: t.text, marginBottom: 10 }}>{card.title}</div>
           <div style={{ display: "flex", gap: 16 }}>
             {card.metrics.map(m => (
               <div key={m.label}>
-                <div style={{ fontSize: 10, color: LT.sub, marginBottom: 2 }}>{m.label}</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: LT.text }}>{m.value}</div>
+                <div style={{ fontSize: 10, color: t.sub, marginBottom: 2 }}>{m.label}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: t.text }}>{m.value}</div>
               </div>
             ))}
           </div>
@@ -238,17 +312,18 @@ function KpiCardRow() {
 
 /* ─── View By toggle ───────────────────────────────────────────────── */
 function ViewByToggle({ active, onSelect }) {
+  const t = useT();
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, fontFamily: "'IBM Plex Sans', sans-serif" }}>
-      <span style={{ fontSize: 13, fontWeight: 600, color: LT.text, marginRight: 4 }}>View By:</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: t.text, marginRight: 4 }}>View By:</span>
       {VIEW_BY_OPTIONS.map(opt => {
         const isActive = active === opt;
         return (
           <button key={opt} onClick={() => onSelect(opt)} style={{
             padding: "5px 16px", borderRadius: 4, fontSize: 12, fontWeight: isActive ? 700 : 400,
-            border: `1px solid ${isActive ? LT.primary : LT.borderDark}`,
-            background: isActive ? LT.primaryLight : LT.surface,
-            color: isActive ? LT.primary : LT.text, cursor: "pointer",
+            border: `1px solid ${isActive ? t.primary : t.borderDark}`,
+            background: isActive ? t.primaryLight : t.surface,
+            color: isActive ? t.primary : t.text, cursor: "pointer",
             fontFamily: "'IBM Plex Sans', sans-serif",
           }}>{opt}</button>
         );
@@ -259,22 +334,23 @@ function ViewByToggle({ active, onSelect }) {
 
 /* ─── Combo chart: Count of Orders at Risk ─────────────────────────── */
 function OrdersAtRiskChart() {
+  const t = useT();
   const selectStyle = {
-    padding: "4px 8px", border: `1px solid ${LT.borderDark}`, borderRadius: 4,
-    fontSize: 11, color: LT.text, background: LT.surface,
+    padding: "4px 8px", border: `1px solid ${t.borderDark}`, borderRadius: 4,
+    fontSize: 11, color: t.text, background: t.surface,
     fontFamily: "'IBM Plex Sans', sans-serif",
   };
   return (
     <div style={{
-      border: `1px solid ${LT.borderDark}`, borderRadius: 6,
-      background: LT.surface, padding: 16, fontFamily: "'IBM Plex Sans', sans-serif",
+      border: `1px solid ${t.borderDark}`, borderRadius: 6,
+      background: t.surface, padding: 16, fontFamily: "'IBM Plex Sans', sans-serif",
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: LT.text }}>Count of Orders at Risk</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: t.text }}>Count of Orders at Risk</div>
         <div style={{ display: "flex", gap: 10 }}>
           {[{ label: "Level1", val: "Plant" }, { label: "Level2", val: "Business" }, { label: "Level3", val: "Market Cluster" }].map(f => (
             <div key={f.label} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 10, color: LT.muted, marginBottom: 2 }}>{f.label}</div>
+              <div style={{ fontSize: 10, color: t.muted, marginBottom: 2 }}>{f.label}</div>
               <select style={selectStyle} defaultValue={f.val}>
                 <option>{f.val}</option>
               </select>
@@ -282,27 +358,29 @@ function OrdersAtRiskChart() {
           ))}
         </div>
       </div>
-      <div style={{ display: "flex", gap: 16, fontSize: 11, color: LT.sub, marginBottom: 8 }}>
-        <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: LT.barBlue, marginRight: 4 }} />Total Orders</span>
-        <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: LT.barRed, marginRight: 4 }} />Orders at Risk</span>
-        <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: LT.lineOrange, marginRight: 4 }} />(%) Risky Orders (OTD)</span>
+      <div style={{ display: "flex", gap: 16, fontSize: 11, color: t.sub, marginBottom: 8 }}>
+        <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: t.barBlue, marginRight: 4 }} />Total Orders</span>
+        <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: t.barRed, marginRight: 4 }} />Orders at Risk</span>
+        <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: t.lineOrange, marginRight: 4 }} />(%) Risky Orders (OTD)</span>
       </div>
       <ResponsiveContainer width="100%" height={300}>
         <ComposedChart data={COMBO_DATA} margin={{ top: 5, right: 10, bottom: 40, left: 0 }}>
-          <CartesianGrid stroke={LT.border} strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="plant" tick={{ fill: LT.sub, fontSize: 9 }} angle={-15} textAnchor="end" interval={0} height={60} />
-          <YAxis yAxisId="left" tick={{ fill: LT.sub, fontSize: 10 }} tickLine={false} axisLine={false} label={{ value: "Orders", angle: -90, position: "insideLeft", style: { fill: LT.sub, fontSize: 11 } }} />
-          <YAxis yAxisId="right" orientation="right" tick={{ fill: LT.sub, fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => v + "%"} domain={[0, 50]} />
+          <CartesianGrid stroke={t.border} strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="plant" tick={{ fill: t.sub, fontSize: 9 }} angle={-15} textAnchor="end" interval={0} height={60} />
+          <YAxis yAxisId="left" tick={{ fill: t.sub, fontSize: 10 }} tickLine={false} axisLine={false} label={{ value: "Orders", angle: -90, position: "insideLeft", style: { fill: t.sub, fontSize: 11 } }} />
+          <YAxis yAxisId="right" orientation="right" tick={{ fill: t.sub, fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => v + "%"} domain={[0, 50]} />
           <Tooltip
-            contentStyle={{ background: LT.surface, border: `1px solid ${LT.border}`, borderRadius: 6, fontSize: 12 }}
+            contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }}
+            labelStyle={{ color: t.text }}
+            itemStyle={{ color: t.sub }}
             formatter={(v, name) => {
               if (name === "pctRisky") return [v.toFixed(2) + "%", "% Risky"];
               return [v.toLocaleString(), name === "total" ? "Total Orders" : "Orders at Risk"];
             }}
           />
-          <Bar yAxisId="left" dataKey="total" fill={LT.barBlue} radius={[2, 2, 0, 0]} barSize={40} label={{ position: "top", fill: LT.text, fontSize: 11, fontWeight: 700 }} />
-          <Bar yAxisId="left" dataKey="atRisk" fill={LT.barRed} radius={[2, 2, 0, 0]} barSize={40} label={{ position: "top", fill: LT.red, fontSize: 10 }} />
-          <Line yAxisId="right" dataKey="pctRisky" stroke={LT.lineOrange} strokeWidth={2} dot={{ r: 4, fill: LT.lineOrange }} label={{ position: "top", fill: LT.lineOrange, fontSize: 10, formatter: v => v.toFixed(2) + "%" }} />
+          <Bar yAxisId="left" dataKey="total" fill={t.barBlue} radius={[2, 2, 0, 0]} barSize={40} label={{ position: "top", fill: t.text, fontSize: 11, fontWeight: 700 }} />
+          <Bar yAxisId="left" dataKey="atRisk" fill={t.barRed} radius={[2, 2, 0, 0]} barSize={40} label={{ position: "top", fill: t.red, fontSize: 10 }} />
+          <Line yAxisId="right" dataKey="pctRisky" stroke={t.lineOrange} strokeWidth={2} dot={{ r: 4, fill: t.lineOrange }} label={{ position: "top", fill: t.lineOrange, fontSize: 10, formatter: v => v.toFixed(2) + "%" }} />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
@@ -311,6 +389,8 @@ function OrdersAtRiskChart() {
 
 /* ─── Pie chart: Distribution of Risk ──────────────────────────────── */
 function RiskDistributionPie() {
+  const t = useT();
+  const pieData = PIE_KEYS.map(d => ({ ...d, color: t[d.colorKey] }));
   const RADIAN = Math.PI / 180;
   const renderLabel = ({ cx, cy, midAngle, outerRadius, name, value }) => {
     const radius = outerRadius + 25;
@@ -319,7 +399,7 @@ function RiskDistributionPie() {
     if (value < 2) return null;
     return (
       <text x={x} y={y} textAnchor={x > cx ? "start" : "end"} dominantBaseline="central"
-        style={{ fontSize: 11, fill: LT.text, fontFamily: "'IBM Plex Sans', sans-serif" }}>
+        style={{ fontSize: 11, fill: t.text, fontFamily: "'IBM Plex Sans', sans-serif" }}>
         {name} {value}%
       </text>
     );
@@ -327,26 +407,26 @@ function RiskDistributionPie() {
 
   return (
     <div style={{
-      border: `1px solid ${LT.borderDark}`, borderRadius: 6,
-      background: LT.surface, padding: 16, fontFamily: "'IBM Plex Sans', sans-serif",
+      border: `1px solid ${t.borderDark}`, borderRadius: 6,
+      background: t.surface, padding: 16, fontFamily: "'IBM Plex Sans', sans-serif",
     }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: LT.text, marginBottom: 4 }}>Distribution of Risk</div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 10, color: LT.sub, marginBottom: 4 }}>
-        {PIE_DATA.map(d => (
+      <div style={{ fontSize: 14, fontWeight: 700, color: t.text, marginBottom: 4 }}>Distribution of Risk</div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, fontSize: 10, color: t.sub, marginBottom: 4 }}>
+        {pieData.map(d => (
           <span key={d.name}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: d.color, marginRight: 3 }} />{d.name}</span>
         ))}
       </div>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
-            data={PIE_DATA} dataKey="value" nameKey="name"
+            data={pieData} dataKey="value" nameKey="name"
             cx="50%" cy="50%" innerRadius={55} outerRadius={100}
-            label={renderLabel} labelLine={{ stroke: LT.muted, strokeWidth: 1 }}
+            label={renderLabel} labelLine={{ stroke: t.muted, strokeWidth: 1 }}
           >
-            {PIE_DATA.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+            {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
           </Pie>
           <Tooltip
-            contentStyle={{ background: LT.surface, border: `1px solid ${LT.border}`, borderRadius: 6, fontSize: 12 }}
+            contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }}
             formatter={(v) => [v + "%", "Share"]}
           />
         </PieChart>
@@ -357,24 +437,25 @@ function RiskDistributionPie() {
 
 /* ─── Bottom table ─────────────────────────────────────────────────── */
 function BottomTable() {
+  const t = useT();
   const cols = ["Exception", "Block", "Open Sales Document Time", "Calendar", "Routing Process"];
   const thStyle = {
     textAlign: "left", padding: "8px 12px", fontSize: 11, fontWeight: 700,
-    color: LT.sub, textTransform: "uppercase", letterSpacing: 0.8,
-    borderBottom: `2px solid ${LT.borderDark}`,
+    color: t.sub, textTransform: "uppercase", letterSpacing: 0.8,
+    borderBottom: `2px solid ${t.borderDark}`,
     fontFamily: "'IBM Plex Mono', monospace",
-    background: LT.surface2,
+    background: t.surface2,
   };
   const tdStyle = (i) => ({
-    padding: "8px 12px", fontSize: 12, color: LT.text,
-    borderBottom: `1px solid ${LT.border}`,
-    background: i % 2 === 0 ? LT.surface : LT.surface2,
+    padding: "8px 12px", fontSize: 12, color: t.text,
+    borderBottom: `1px solid ${t.border}`,
+    background: i % 2 === 0 ? t.surface : t.surface2,
     fontFamily: "'IBM Plex Sans', sans-serif",
   });
   return (
     <div style={{
-      border: `1px solid ${LT.borderDark}`, borderRadius: 6,
-      background: LT.surface, overflow: "hidden", marginTop: 14,
+      border: `1px solid ${t.borderDark}`, borderRadius: 6,
+      background: t.surface, overflow: "hidden", marginTop: 14,
     }}>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
@@ -402,33 +483,42 @@ function OtdApp() {
   const [subTab, setSubTab] = useState("Order to Delivery");
   const [sidebar, setSidebar] = useState("Order to Delivery");
   const [viewBy, setViewBy] = useState("Count");
+  const [isDark, setIsDark] = useState(true);
+
+  const theme = isDark ? DARK : LIGHT;
+
+  useEffect(() => {
+    document.body.style.background = theme.bg;
+    document.body.style.margin = "0";
+  }, [theme.bg]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: LT.bg, fontFamily: "'IBM Plex Sans', sans-serif" }}>
-      <HeaderBar activeTab={mainTab} onTabClick={setMainTab} />
-      <SubHeaderTabs activeTab={subTab} onTabClick={setSubTab} />
-      <div style={{ display: "flex", flex: 1 }}>
-        <SidebarNav active={sidebar} onSelect={setSidebar} />
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
-          <DateControlsBar />
-          <KpiCardRow />
-          <ViewByToggle active={viewBy} onSelect={setViewBy} />
-          <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1fr", gap: 14 }}>
-            <OrdersAtRiskChart />
-            <RiskDistributionPie />
+    <ThemeCtx.Provider value={theme}>
+      <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: theme.bg, fontFamily: "'IBM Plex Sans', sans-serif", transition: "background 0.3s" }}>
+        <HeaderBar activeTab={mainTab} onTabClick={setMainTab} isDark={isDark} onThemeToggle={() => setIsDark(d => !d)} />
+        <SubHeaderTabs activeTab={subTab} onTabClick={setSubTab} />
+        <div style={{ display: "flex", flex: 1 }}>
+          <SidebarNav active={sidebar} onSelect={setSidebar} />
+          <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
+            <DateControlsBar />
+            <KpiCardRow />
+            <ViewByToggle active={viewBy} onSelect={setViewBy} />
+            <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1fr", gap: 14 }}>
+              <OrdersAtRiskChart />
+              <RiskDistributionPie />
+            </div>
+            <BottomTable />
           </div>
-          <BottomTable />
         </div>
       </div>
-    </div>
+    </ThemeCtx.Provider>
   );
 }
 
-/* ─── Export with body background override ─────────────────────────── */
+/* ─── Export ────────────────────────────────────────────────────────── */
 export default function OtdDashboard() {
   useEffect(() => {
     const prev = document.body.style.background;
-    document.body.style.background = LT.bg;
     document.body.style.margin = "0";
     return () => { document.body.style.background = prev; };
   }, []);
