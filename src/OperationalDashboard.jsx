@@ -154,6 +154,66 @@ function makeAlerts() {
   ];
 }
 
+/* ─── European supply-chain map data ────────────────────────────────── */
+function geoToSvg(lon, lat) {
+  const x = 30 + ((lon - (-6)) / 23) * 740;
+  const y = 540 - ((lat - 43.5) / 12.5) * 500;
+  return [Math.round(x), Math.round(y)];
+}
+
+const COUNTRIES = {
+  uk: [[-5.5,50.1],[-5.3,51.4],[-4.2,51.6],[-3.1,51.4],[-2.9,52.3],[-3.5,53.3],[-3.1,54.0],[-3.3,54.8],[-1.8,55.0],[-1.5,54.5],[0.0,53.5],[1.7,52.8],[1.5,51.8],[1.0,51.3],[0.3,51.0],[-0.8,50.7],[-1.2,50.6],[-2.5,50.5],[-3.5,50.3],[-5.5,50.1]],
+  france: [[-1.8,48.6],[1.8,51.0],[2.6,51.1],[4.0,50.0],[6.0,49.0],[7.5,48.5],[7.6,47.6],[7.0,47.3],[6.2,46.2],[6.6,45.8],[5.8,43.5],[3.0,43.2],[0.5,42.7],[-1.5,43.5],[-1.8,46.0],[-2.5,47.3],[-3.5,47.8],[-1.8,48.6]],
+  belgium: [[2.6,51.1],[3.4,51.4],[4.3,51.4],[5.0,51.5],[5.8,51.2],[6.0,50.5],[6.0,49.5],[5.7,49.5],[4.8,49.9],[4.0,50.0],[2.6,51.1]],
+  netherlands: [[3.4,51.4],[3.6,51.8],[4.0,52.0],[4.5,52.5],[5.0,53.0],[5.5,53.5],[6.2,53.5],[7.0,53.3],[7.1,52.4],[6.8,51.9],[6.0,51.8],[5.8,51.2],[5.0,51.5],[4.3,51.4],[3.4,51.4]],
+  germany: [[6.0,51.8],[6.8,51.9],[7.1,52.4],[7.0,53.3],[7.5,53.8],[8.3,54.0],[8.8,54.4],[9.5,54.8],[10.5,54.6],[11.0,54.4],[12.0,54.2],[13.5,54.3],[14.2,53.9],[14.7,52.9],[14.7,51.5],[15.0,51.0],[14.3,50.9],[12.5,50.3],[12.1,50.3],[12.1,49.5],[13.0,48.5],[13.0,47.5],[12.8,47.6],[10.5,47.5],[10.0,47.3],[9.5,47.5],[8.5,47.6],[7.6,47.6],[7.5,48.5],[6.0,49.0],[6.0,49.5],[6.0,50.5],[5.8,51.2],[6.0,51.8]],
+  switzerland: [[6.0,46.0],[6.2,46.2],[7.0,47.3],[7.6,47.6],[8.5,47.6],[9.5,47.5],[10.0,47.3],[10.5,47.5],[10.5,47.0],[10.5,46.5],[9.5,46.3],[9.0,46.0],[8.0,45.8],[7.0,45.9],[6.0,46.0]],
+  italy_n: [[6.6,45.8],[7.0,45.9],[8.0,45.8],[9.0,46.0],[9.5,46.3],[10.5,46.5],[11.5,46.5],[12.5,46.6],[13.5,46.5],[13.8,46.0],[13.5,45.5],[12.5,45.3],[12.3,44.8],[11.0,44.5],[9.5,44.4],[8.5,44.2],[7.5,44.1],[6.8,44.4],[6.6,45.0],[6.6,45.8]],
+  luxembourg: [[5.7,49.5],[6.0,49.5],[6.5,49.5],[6.5,49.8],[6.0,50.1],[5.7,50.1],[5.7,49.5]],
+  austria: [[10.0,47.3],[10.5,47.5],[12.8,47.6],[13.0,47.5],[13.0,48.5],[14.0,48.5],[15.0,48.5],[16.0,48.0],[16.0,47.5],[16.5,47.0],[16.0,46.7],[14.5,46.5],[13.5,46.5],[12.5,46.6],[11.5,46.5],[10.5,46.5],[10.5,47.0],[10.0,47.3]],
+  denmark: [[8.1,54.8],[8.3,55.5],[8.6,56.5],[9.5,57.0],[10.5,57.7],[10.5,56.0],[10.8,55.5],[12.5,56.0],[12.5,55.3],[11.0,55.0],[10.0,54.8],[8.1,54.8]],
+  czechia: [[12.1,50.3],[14.3,50.9],[15.0,51.0],[16.0,50.6],[16.8,50.2],[16.5,49.5],[16.0,48.8],[15.0,48.8],[14.0,48.5],[13.0,48.5],[12.1,49.5],[12.1,50.3]],
+};
+
+const MAP_HUBS = [
+  { id:"lyon",      name:"Lyon",       lon:4.83,  lat:45.76, type:"hub" },
+  { id:"geneva",    name:"Geneva",     lon:6.14,  lat:46.20, type:"hub" },
+  { id:"hamburg",   name:"Hamburg",    lon:9.99,  lat:53.55, type:"factory" },
+  { id:"berlin",    name:"Berlin",     lon:13.40, lat:52.52, type:"hub" },
+  { id:"zurich",    name:"Zürich",     lon:8.54,  lat:47.38, type:"hub" },
+  { id:"milan",     name:"Milan",      lon:9.19,  lat:45.46, type:"hub" },
+  { id:"paris",     name:"Paris",      lon:2.35,  lat:48.86, type:"hub" },
+  { id:"brussels",  name:"Brussels",   lon:4.35,  lat:50.85, type:"hub" },
+  { id:"rotterdam", name:"Rotterdam",  lon:4.48,  lat:51.92, type:"hub" },
+  { id:"cologne",   name:"Cologne",    lon:6.96,  lat:50.94, type:"hub" },
+  { id:"vevey",     name:"Vevey HQ",   lon:6.84,  lat:46.46, type:"hq" },
+  { id:"broc",      name:"Broc",       lon:7.10,  lat:46.61, type:"factory" },
+  { id:"biessenhofen", name:"Biessenhofen", lon:10.63, lat:47.84, type:"factory" },
+  { id:"york",      name:"York",       lon:-1.08, lat:53.96, type:"factory" },
+];
+
+const MAP_ROUTES = [
+  { from:"lyon",      to:"geneva",       label:"TRK-441" },
+  { from:"hamburg",   to:"berlin",       label:"TRK-443" },
+  { from:"zurich",    to:"milan",        label:"TRK-447" },
+  { from:"paris",     to:"brussels",     label:"TRK-451" },
+  { from:"rotterdam", to:"cologne",      label:"TRK-458" },
+  { from:"york",      to:"rotterdam",    label:"TRK-462" },
+  { from:"broc",      to:"biessenhofen", label:"TRK-465" },
+  { from:"cologne",   to:"hamburg",      label:"TRK-470" },
+];
+
+function makeRoutePath(fromHub, toHub) {
+  const [x1, y1] = geoToSvg(fromHub.lon, fromHub.lat);
+  const [x2, y2] = geoToSvg(toHub.lon, toHub.lat);
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const off = Math.min(40, len * 0.2);
+  const cx = mx - (dy / len) * off, cy = my + (dx / len) * off;
+  return `M${x1},${y1} Q${cx},${cy} ${x2},${y2}`;
+}
+
 /* ─── Alert action modal data ────────────────────────────────────────── */
 const ACTION_MODAL_DATA = {
   Inventory: {
@@ -414,6 +474,125 @@ function SupplierTable({ suppliers }) {
           })}
         </tbody>
       </table>
+    </Card>
+  );
+}
+
+/* ─── European supply-chain map ─────────────────────────────────────── */
+function SupplyChainMap() {
+  const STATUS_COLORS = { "on-time": T.green, delayed: T.amber, alert: T.red };
+  const [routeStatuses, setRouteStatuses] = useState(
+    () => MAP_ROUTES.map(() => "on-time")
+  );
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setRouteStatuses(prev =>
+        prev.map(s => Math.random() < 0.15
+          ? ["on-time","on-time","on-time","delayed","alert"][Math.floor(Math.random() * 5)]
+          : s
+        )
+      );
+    }, 8000);
+    return () => clearInterval(id);
+  }, []);
+
+  const hubMap = {};
+  MAP_HUBS.forEach(h => { hubMap[h.id] = h; });
+
+  return (
+    <Card title="European Supply Network" subtitle="14 nodes · 8 active routes" action="Expand →">
+      <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" style={{ width: "100%", display: "block" }}>
+        <defs>
+          <filter id="shipGlow">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <radialGradient id="hubGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={T.primary} stopOpacity="0.6" />
+            <stop offset="100%" stopColor={T.primary} stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        {/* Country outlines */}
+        {Object.values(COUNTRIES).map((coords, ci) => (
+          <polygon
+            key={ci}
+            points={coords.map(([lon, lat]) => geoToSvg(lon, lat).join(",")).join(" ")}
+            fill={T.surface2}
+            stroke={T.border}
+            strokeWidth="1"
+          />
+        ))}
+
+        {/* Route paths + animated shipment dots */}
+        {MAP_ROUTES.map((route, ri) => {
+          const from = hubMap[route.from], to = hubMap[route.to];
+          if (!from || !to) return null;
+          const d = makeRoutePath(from, to);
+          const color = STATUS_COLORS[routeStatuses[ri]] || T.green;
+          const dur1 = (3.5 + ri * 0.5) + "s";
+          const dur2 = (5.0 + ri * 0.4) + "s";
+          return (
+            <g key={route.label}>
+              {/* Route line */}
+              <path d={d} fill="none" stroke={color} strokeWidth="2" strokeDasharray="6 4" opacity="0.45" />
+              {/* Shipment dot 1 */}
+              <circle r="4" fill={color} filter="url(#shipGlow)">
+                <animateMotion dur={dur1} repeatCount="indefinite" path={d} />
+              </circle>
+              {/* Glow trail 1 */}
+              <circle r="8" fill={color} opacity="0.2">
+                <animateMotion dur={dur1} repeatCount="indefinite" path={d} />
+              </circle>
+              {/* Shipment dot 2 (offset) */}
+              <circle r="3" fill={color} filter="url(#shipGlow)">
+                <animateMotion dur={dur2} repeatCount="indefinite" path={d} begin={`-${parseFloat(dur2)/2}s`} />
+              </circle>
+            </g>
+          );
+        })}
+
+        {/* Hub / factory / HQ nodes */}
+        {MAP_HUBS.map((hub, hi) => {
+          const [cx, cy] = geoToSvg(hub.lon, hub.lat);
+          const isHq = hub.type === "hq";
+          const isFac = hub.type === "factory";
+          const nodeColor = isHq ? T.nestle : isFac ? T.amber : T.primary;
+          const pulseDelay = (hi * 0.35) + "s";
+          return (
+            <g key={hub.id}>
+              {/* Pulse ring */}
+              <circle cx={cx} cy={cy} r="14" fill={nodeColor} opacity="0">
+                <animate attributeName="opacity" values="0.35;0.05;0.35" dur="2.8s" begin={pulseDelay} repeatCount="indefinite" />
+                <animate attributeName="r" values="10;18;10" dur="2.8s" begin={pulseDelay} repeatCount="indefinite" />
+              </circle>
+              {/* Node marker */}
+              {isHq ? (
+                <polygon points={`${cx},${cy-7} ${cx+6},${cy} ${cx},${cy+7} ${cx-6},${cy}`} fill={T.nestle} stroke={T.bg} strokeWidth="1.5" />
+              ) : isFac ? (
+                <rect x={cx-5} y={cy-5} width="10" height="10" rx="2" fill={nodeColor} stroke={T.bg} strokeWidth="1.5" />
+              ) : (
+                <circle cx={cx} cy={cy} r="5" fill={nodeColor} stroke={T.bg} strokeWidth="1.5" />
+              )}
+              {/* Label */}
+              <text x={cx} y={cy + 16} textAnchor="middle" fill={T.sub} fontSize="9" fontFamily="IBM Plex Sans">{hub.name}</text>
+            </g>
+          );
+        })}
+
+        {/* Legend */}
+        <g transform="translate(620, 560)">
+          <circle cx="0" cy="0" r="4" fill={T.green} /><text x="8" y="4" fill={T.sub} fontSize="9" fontFamily="IBM Plex Sans">On-Time</text>
+          <circle cx="65" cy="0" r="4" fill={T.amber} /><text x="73" y="4" fill={T.sub} fontSize="9" fontFamily="IBM Plex Sans">Delayed</text>
+          <circle cx="130" cy="0" r="4" fill={T.red} /><text x="138" y="4" fill={T.sub} fontSize="9" fontFamily="IBM Plex Sans">Alert</text>
+        </g>
+        <g transform="translate(620, 540)">
+          <rect x="-4" y="-4" width="8" height="8" rx="1.5" fill={T.amber} /><text x="8" y="4" fill={T.sub} fontSize="9" fontFamily="IBM Plex Sans">Factory</text>
+          <polygon points="65,-5 70,0 65,5 60,0" fill={T.nestle} /><text x="73" y="4" fill={T.sub} fontSize="9" fontFamily="IBM Plex Sans">HQ</text>
+          <circle cx="120" cy="0" r="4" fill={T.primary} /><text x="128" y="4" fill={T.sub} fontSize="9" fontFamily="IBM Plex Sans">Hub</text>
+        </g>
+      </svg>
     </Card>
   );
 }
@@ -1048,6 +1227,11 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 14, marginTop: 14 }}>
             <AlertsPanel alerts={data.alerts.filter(a => !dismissedAlerts.has(a.id))} onAct={setActionAlert} accelOn={accelOn} />
             <SupplierTable suppliers={data.suppliers} />
+          </div>
+
+          {/* Row 2.5: European supply network map */}
+          <div style={{ marginTop: 14 }}>
+            <SupplyChainMap />
           </div>
 
           {/* Row 3: throughput + OTD trend + inventory + factory */}
