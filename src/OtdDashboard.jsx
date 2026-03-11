@@ -575,21 +575,20 @@ function OtdApp() {
   };
 
   const renderContent = () => {
-    switch (subTab) {
-      case "Overview":
-        /* Overview shows different content depending on which main tab is active */
-        return mainTab === "Order to Delivery"
-          ? <OtdOverviewScreen viewBy={viewBy} onViewBy={setViewBy} />
-          : <ExecSummaryOverview viewBy={viewBy} onViewBy={setViewBy} />;
-      case "Order to Delivery":
-        return <OtdScreen viewBy={viewBy} onViewBy={setViewBy} />;
-      case "Delivery to Billing":
-        return <DtbScreen viewBy={viewBy} onViewBy={setViewBy} />;
-      case "Billing to POD":
-        return <BtpScreen viewBy={viewBy} onViewBy={setViewBy} />;
-      default:
-        return <ExecSummaryOverview viewBy={viewBy} onViewBy={setViewBy} />;
+    /* Under Executive Summary, Overview shows the exec overview,
+       all other sub-tabs show the OTD screen (orders perspective).
+       DTB and BTP screens only appear via their own main tabs. */
+    if (mainTab === "Executive Summary") {
+      if (subTab === "Overview") return <ExecSummaryOverview viewBy={viewBy} onViewBy={setViewBy} />;
+      return <OtdScreen viewBy={viewBy} onViewBy={setViewBy} />;
     }
+    if (mainTab === "Order to Delivery") {
+      if (subTab === "Overview") return <OtdOverviewScreen viewBy={viewBy} onViewBy={setViewBy} />;
+      return <OtdScreen viewBy={viewBy} onViewBy={setViewBy} />;
+    }
+    if (mainTab === "Delivery to Billing") return <DtbScreen viewBy={viewBy} onViewBy={setViewBy} />;
+    if (mainTab === "Billing to POD") return <BtpScreen viewBy={viewBy} onViewBy={setViewBy} />;
+    return <ExecSummaryOverview viewBy={viewBy} onViewBy={setViewBy} />;
   };
 
   return (
