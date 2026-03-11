@@ -4,39 +4,39 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from "recharts";
 
-/* ─── Light theme tokens ───────────────────────────────────────────── */
+/* ─── Dark theme tokens ────────────────────────────────────────────── */
 const LT = {
-  bg:         "#F5F6FA",
-  surface:    "#FFFFFF",
-  surface2:   "#F0F1F5",
-  border:     "#E0E3EB",
-  borderDark: "#CBD0DC",
-  nav:        "#FFFFFF",
-  navText:    "#6B7280",
-  navActive:  "#1D4ED8",
-  navActiveBg:"#EFF6FF",
-  navBorder:  "#2563EB",
-  headerBg:   "#1E293B",
+  bg:         "#0B0E14",
+  surface:    "#141821",
+  surface2:   "#111520",
+  border:     "#1F2533",
+  borderDark: "#2A3145",
+  nav:        "#111520",
+  navText:    "#8B95A8",
+  navActive:  "#60A5FA",
+  navActiveBg:"#1A2540",
+  navBorder:  "#3B82F6",
+  headerBg:   "#070A10",
   headerText: "#FFFFFF",
-  headerTab:  "#94A3B8",
-  headerTabAct:"#FFFFFF",
-  primary:    "#2563EB",
-  primaryLight:"#DBEAFE",
-  red:        "#EF4444",
-  amber:      "#F59E0B",
-  green:      "#10B981",
-  barBlue:    "#3B82F6",
-  barRed:     "#EF4444",
-  lineOrange: "#F97316",
+  headerTab:  "#64748B",
+  headerTabAct:"#F1F5F9",
+  primary:    "#3B82F6",
+  primaryLight:"#172554",
+  red:        "#F87171",
+  amber:      "#FBBF24",
+  green:      "#34D399",
+  barBlue:    "#60A5FA",
+  barRed:     "#F87171",
+  lineOrange: "#FB923C",
   pieCoral:   "#F87171",
-  pieBlue:    "#3B82F6",
+  pieBlue:    "#60A5FA",
   pieYellow:  "#FBBF24",
-  pieGreen:   "#10B981",
-  pieRed:     "#DC2626",
-  piePurple:  "#8B5CF6",
-  text:       "#111827",
-  sub:        "#6B7280",
-  muted:      "#9CA3AF",
+  pieGreen:   "#34D399",
+  pieRed:     "#EF4444",
+  piePurple:  "#A78BFA",
+  text:       "#E2E8F0",
+  sub:        "#94A3B8",
+  muted:      "#64748B",
   nestle:     "#E8002A",
 };
 
@@ -115,14 +115,14 @@ function HeaderBar({ activeTab, onTabClick }) {
       background: LT.headerBg, display: "flex", alignItems: "center", height: 48,
       padding: "0 20px", fontFamily: "'IBM Plex Sans', sans-serif",
     }}>
-      <img src="/nestle-logo.svg" alt="Nestlé" style={{ height: 32, marginRight: 24, filter: "brightness(0) invert(1)" }} />
+      <img src="/nestle-logo.svg" alt="Nestlé" style={{ height: 32, marginRight: 24, filter: "brightness(0) invert(1)", opacity: 0.9 }} />
       <div style={{ display: "flex", gap: 0, flex: 1 }}>
         {MAIN_TABS.map(tab => (
           <div key={tab} onClick={() => onTabClick(tab)} style={{
             padding: "12px 18px", cursor: "pointer",
             color: activeTab === tab ? LT.headerTabAct : LT.headerTab,
             fontWeight: activeTab === tab ? 700 : 400, fontSize: 13,
-            borderBottom: activeTab === tab ? "2px solid #fff" : "2px solid transparent",
+            borderBottom: activeTab === tab ? `2px solid ${LT.primary}` : "2px solid transparent",
           }}>{tab}</div>
         ))}
       </div>
