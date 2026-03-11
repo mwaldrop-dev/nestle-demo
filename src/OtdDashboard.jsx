@@ -62,7 +62,7 @@ function ExecSummaryOverview({ viewBy, onViewBy }) {
   const t = useT();
   const card = { border: `1px solid ${t.borderDark}`, borderRadius: 6, background: t.surface, padding: 16, fontFamily: F };
   return (
-    <div style={{ padding: "16px 24px" }}>
+    <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
       <DateControlsBar />
       <ViewByToggle active={viewBy} onSelect={onViewBy} />
       <div style={{ fontSize: 16, fontWeight: 700, color: t.text, marginBottom: 14 }}>Order to Delivery</div>
