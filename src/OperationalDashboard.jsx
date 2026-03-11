@@ -597,6 +597,114 @@ function SupplyChainMap() {
   );
 }
 
+/* ─── Supplier OTD by material bar chart ────────────────────────────── */
+function SupplierOtdByMaterial({ suppliers }) {
+  const grouped = {};
+  suppliers.forEach(s => {
+    if (!grouped[s.material]) grouped[s.material] = [];
+    grouped[s.material].push(s.otd);
+  });
+  const chartData = Object.entries(grouped).map(([mat, vals]) => ({
+    material: mat,
+    otd: +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1),
+  })).sort((a, b) => b.otd - a.otd);
+
+  return (
+    <Card title="OTD by Material Category" subtitle="Average on-time delivery % per sourced material">
+      <ResponsiveContainer width="100%" height={150}>
+        <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
+          <CartesianGrid stroke={T.border} strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="material" tick={{ fill: T.muted, fontSize: 9 }} tickLine={false} />
+          <YAxis domain={[50, 100]} tick={{ fill: T.muted, fontSize: 9 }} tickLine={false} axisLine={false} tickFormatter={v => v + "%"} />
+          <Tooltip
+            contentStyle={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 6, fontSize: 11, color: T.text }}
+            labelStyle={{ color: T.sub }}
+            formatter={(v) => [v + "%", "Avg OTD"]}
+          />
+          <ReferenceLine y={90} stroke={T.amber} strokeDasharray="4 3" />
+          <Bar dataKey="otd" radius={[4, 4, 0, 0]}>
+            {chartData.map((entry, i) => (
+              <Cell key={i} fill={entry.otd >= 90 ? T.green : entry.otd >= 80 ? T.amber : T.red} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+}
+
+/* ─── Supplier lead-time comparison ─────────────────────────────────── */
+function SupplierLeadTime() {
+  const data = [
+    { region: "Côte d'Iv.", avg: 12, target: 10 },
+    { region: "Netherl.", avg: 5, target: 6 },
+    { region: "Singapore", avg: 18, target: 15 },
+    { region: "Germany", avg: 4, target: 5 },
+    { region: "NZ", avg: 22, target: 20 },
+    { region: "Ukraine", avg: 9, target: 8 },
+  ];
+  return (
+    <Card title="Avg Lead Time by Region" subtitle="Days from PO to delivery · target in amber">
+      <ResponsiveContainer width="100%" height={150}>
+        <BarChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
+          <CartesianGrid stroke={T.border} strokeDasharray="3 3" vertical={false} />
+          <XAxis dataKey="region" tick={{ fill: T.muted, fontSize: 9 }} tickLine={false} />
+          <YAxis tick={{ fill: T.muted, fontSize: 9 }} tickLine={false} axisLine={false} tickFormatter={v => v + "d"} />
+          <Tooltip
+            contentStyle={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 6, fontSize: 11, color: T.text }}
+            labelStyle={{ color: T.sub }}
+            formatter={(v, n) => [v + " days", n === "avg" ? "Actual" : "Target"]}
+          />
+          <Bar dataKey="avg" fill={T.primary} radius={[4, 4, 0, 0]} />
+          <Bar dataKey="target" fill={T.amber} radius={[4, 4, 0, 0]} opacity={0.4} />
+        </BarChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+}
+
+/* ─── Suppliers page ────────────────────────────────────────────────── */
+function SuppliersPage({ suppliers, otdHistory }) {
+  return (
+    <div style={{ padding: "16px 20px 32px" }}>
+      {/* Row 1: Map */}
+      <SupplyChainMap />
+
+      {/* Row 2: charts */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
+        <SupplierOtdByMaterial suppliers={suppliers} />
+        <OtdTrendChart otdHistory={otdHistory} />
+      </div>
+
+      {/* Row 3: lead time + placeholder */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
+        <SupplierLeadTime />
+        <Card title="Supplier Risk Breakdown" subtitle="Active tier-1 suppliers by risk category">
+          <div style={{ display: "flex", gap: 20, alignItems: "center", justifyContent: "center", padding: "18px 0" }}>
+            {[
+              { label: "On-Time", count: suppliers.filter(s => s.status === "on-time").length, color: T.green },
+              { label: "At-Risk", count: suppliers.filter(s => s.status === "at-risk").length, color: T.amber },
+              { label: "Delayed", count: suppliers.filter(s => s.status === "delayed").length, color: T.red },
+            ].map(b => (
+              <div key={b.label} style={{ textAlign: "center" }}>
+                <div style={{ width: 56, height: 56, borderRadius: "50%", border: `3px solid ${b.color}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
+                  <span style={{ fontSize: 22, fontWeight: 700, color: b.color, fontFamily: "'IBM Plex Mono', monospace" }}>{b.count}</span>
+                </div>
+                <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>{b.label}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Row 4: Full supplier table */}
+      <div style={{ marginTop: 14 }}>
+        <SupplierTable suppliers={suppliers} />
+      </div>
+    </div>
+  );
+}
+
 /* ─── Cold chain table ───────────────────────────────────────────────── */
 function ColdChainTable({ coldChain }) {
   return (
@@ -1083,6 +1191,9 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
   const { tick: autoTick, lastRefresh: autoLast, isRefreshing: autoRefreshing } = useDataRefresh();
   const autoData = useDashboardData(frozen ? 0 : (overrideTick ?? autoTick));
 
+  // ── Page navigation ──
+  const [activePage, setActivePage] = useState("Overview");
+
   // ── Action modal ──
   const [actionAlert, setActionAlert] = useState(null);
   const [dismissedAlerts, setDismissedAlerts] = useState(new Set());
@@ -1144,18 +1255,23 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: "10px 8px" }}>
-          {NAV_ITEMS.map(item => (
-            <div key={item.label} style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "9px 12px", borderRadius: 6, marginBottom: 2,
-              background: item.active ? "#ffffff18" : "transparent",
-              borderLeft: item.active ? `3px solid ${T.nestle}` : "3px solid transparent",
-              cursor: "pointer",
-            }}>
-              <span style={{ fontSize: 13, color: item.active ? "#fff" : T.navText }}>{item.icon}</span>
-              <span style={{ fontSize: 13, color: item.active ? T.navActive : T.navText, fontWeight: item.active ? 600 : 400 }}>{item.label}</span>
-            </div>
-          ))}
+          {NAV_ITEMS.map(item => {
+            const isActive = activePage === item.label;
+            const enabled = item.label === "Overview" || item.label === "Suppliers";
+            return (
+              <div key={item.label} onClick={enabled ? () => setActivePage(item.label) : undefined} style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "9px 12px", borderRadius: 6, marginBottom: 2,
+                background: isActive ? "#ffffff18" : "transparent",
+                borderLeft: isActive ? `3px solid ${T.nestle}` : "3px solid transparent",
+                cursor: enabled ? "pointer" : "default",
+                opacity: enabled ? 1 : 0.5,
+              }}>
+                <span style={{ fontSize: 13, color: isActive ? "#fff" : T.navText }}>{item.icon}</span>
+                <span style={{ fontSize: 13, color: isActive ? T.navActive : T.navText, fontWeight: isActive ? 600 : 400 }}>{item.label}</span>
+              </div>
+            );
+          })}
         </nav>
 
         {/* User */}
@@ -1218,37 +1334,36 @@ function Dashboard({ simTime, overrideData, overrideTick, frozen }) {
           </div>
         </div>
 
-        {/* Content */}
-        <div style={{ padding: "16px 20px 32px" }}>
-          {/* KPI strip */}
-          <KpiStrip kpis={data.kpis} tick={tick} />
+        {/* Content — page-switched */}
+        {activePage === "Suppliers" ? (
+          <SuppliersPage suppliers={data.suppliers} otdHistory={data.otdHistory} />
+        ) : (
+          <div style={{ padding: "16px 20px 32px" }}>
+            {/* KPI strip */}
+            <KpiStrip kpis={data.kpis} tick={tick} />
 
-          {/* Row 2: alerts + supplier table */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 14, marginTop: 14 }}>
-            <AlertsPanel alerts={data.alerts.filter(a => !dismissedAlerts.has(a.id))} onAct={setActionAlert} accelOn={accelOn} />
-            <SupplierTable suppliers={data.suppliers} />
-          </div>
+            {/* Row 2: alerts + supplier table */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 14, marginTop: 14 }}>
+              <AlertsPanel alerts={data.alerts.filter(a => !dismissedAlerts.has(a.id))} onAct={setActionAlert} accelOn={accelOn} />
+              <SupplierTable suppliers={data.suppliers} />
+            </div>
 
-          {/* Row 2.5: European supply network map */}
-          <div style={{ marginTop: 14 }}>
-            <SupplyChainMap />
-          </div>
+            {/* Row 3: throughput + OTD trend + inventory + factory */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
+              <ThroughputChart throughput={data.throughput} />
+              <OtdTrendChart otdHistory={data.otdHistory} />
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
+              <InventoryPanel inventory={data.inventory} />
+              <FactoryPanel factories={data.factories} />
+            </div>
 
-          {/* Row 3: throughput + OTD trend + inventory + factory */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
-            <ThroughputChart throughput={data.throughput} />
-            <OtdTrendChart otdHistory={data.otdHistory} />
+            {/* Row 4: cold chain */}
+            <div style={{ marginTop: 14 }}>
+              <ColdChainTable coldChain={data.coldChain} />
+            </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
-            <InventoryPanel inventory={data.inventory} />
-            <FactoryPanel factories={data.factories} />
-          </div>
-
-          {/* Row 4: cold chain */}
-          <div style={{ marginTop: 14 }}>
-            <ColdChainTable coldChain={data.coldChain} />
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Action modal */}
