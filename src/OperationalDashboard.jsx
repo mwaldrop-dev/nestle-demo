@@ -356,7 +356,7 @@ function Card({ title, subtitle, action, children, style = {} }) {
           {action && <span style={{ fontSize: 11, color: T.primary, cursor: "pointer", fontWeight: 600 }}>{action}</span>}
         </div>
       )}
-      <div style={{ padding: "14px 18px" }}>{children}</div>
+      <div style={{ padding: "14px 18px", flex: style.display === "flex" ? 1 : undefined, minHeight: 0 }}>{children}</div>
     </div>
   );
 }
@@ -501,8 +501,8 @@ function SupplyChainMap() {
   MAP_HUBS.forEach(h => { hubMap[h.id] = h; });
 
   return (
-    <Card title="European Supply Network" subtitle="14 nodes · 8 active routes" action="Expand →">
-      <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" style={{ width: "100%", maxHeight: 260, display: "block" }}>
+    <Card title="European Supply Network" subtitle="14 nodes · 8 active routes" action="Expand →" style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" style={{ width: "100%", flex: 1, display: "block" }}>
         <defs>
           <filter id="shipGlow">
             <feGaussianBlur stdDeviation="4" result="blur" />
@@ -598,7 +598,7 @@ function SupplyChainMap() {
 }
 
 /* ─── Supplier OTD by material bar chart ────────────────────────────── */
-function SupplierOtdByMaterial({ suppliers }) {
+function SupplierOtdByMaterial({ suppliers, height = 150 }) {
   const grouped = {};
   suppliers.forEach(s => {
     if (!grouped[s.material]) grouped[s.material] = [];
@@ -611,7 +611,7 @@ function SupplierOtdByMaterial({ suppliers }) {
 
   return (
     <Card title="OTD by Material Category" subtitle="Average on-time delivery % per sourced material">
-      <ResponsiveContainer width="100%" height={150}>
+      <ResponsiveContainer width="100%" height={height}>
         <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
           <CartesianGrid stroke={T.border} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="material" tick={{ fill: T.muted, fontSize: 9 }} tickLine={false} />
@@ -634,7 +634,7 @@ function SupplierOtdByMaterial({ suppliers }) {
 }
 
 /* ─── Supplier lead-time comparison ─────────────────────────────────── */
-function SupplierLeadTime() {
+function SupplierLeadTime({ height = 150 }) {
   const data = [
     { region: "Côte d'Iv.", avg: 12, target: 10 },
     { region: "Netherl.", avg: 5, target: 6 },
@@ -645,7 +645,7 @@ function SupplierLeadTime() {
   ];
   return (
     <Card title="Avg Lead Time by Region" subtitle="Days from PO to delivery · target in amber">
-      <ResponsiveContainer width="100%" height={150}>
+      <ResponsiveContainer width="100%" height={height}>
         <BarChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
           <CartesianGrid stroke={T.border} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="region" tick={{ fill: T.muted, fontSize: 9 }} tickLine={false} />
@@ -667,37 +667,33 @@ function SupplierLeadTime() {
 function SuppliersPage({ suppliers, otdHistory }) {
   return (
     <div style={{ padding: "16px 20px 32px" }}>
-      {/* Row 1: Map */}
-      <SupplyChainMap />
-
-      {/* Row 2: charts */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
-        <SupplierOtdByMaterial suppliers={suppliers} />
-        <OtdTrendChart otdHistory={otdHistory} />
-      </div>
-
-      {/* Row 3: lead time + placeholder */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
-        <SupplierLeadTime />
-        <Card title="Supplier Risk Breakdown" subtitle="Active tier-1 suppliers by risk category">
-          <div style={{ display: "flex", gap: 20, alignItems: "center", justifyContent: "center", padding: "18px 0" }}>
-            {[
-              { label: "On-Time", count: suppliers.filter(s => s.status === "on-time").length, color: T.green },
-              { label: "At-Risk", count: suppliers.filter(s => s.status === "at-risk").length, color: T.amber },
-              { label: "Delayed", count: suppliers.filter(s => s.status === "delayed").length, color: T.red },
-            ].map(b => (
-              <div key={b.label} style={{ textAlign: "center" }}>
-                <div style={{ width: 56, height: 56, borderRadius: "50%", border: `3px solid ${b.color}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px" }}>
-                  <span style={{ fontSize: 22, fontWeight: 700, color: b.color, fontFamily: "'IBM Plex Mono', monospace" }}>{b.count}</span>
+      {/* Top: Map (left 2/3) + charts (right 1/3) */}
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14 }}>
+        <SupplyChainMap />
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <SupplierOtdByMaterial suppliers={suppliers} height={100} />
+          <OtdTrendChart otdHistory={otdHistory} height={100} />
+          <SupplierLeadTime height={100} />
+          <Card title="Risk Breakdown" subtitle="Tier-1 suppliers by risk">
+            <div style={{ display: "flex", gap: 14, alignItems: "center", justifyContent: "center", padding: "8px 0" }}>
+              {[
+                { label: "On-Time", count: suppliers.filter(s => s.status === "on-time").length, color: T.green },
+                { label: "At-Risk", count: suppliers.filter(s => s.status === "at-risk").length, color: T.amber },
+                { label: "Delayed", count: suppliers.filter(s => s.status === "delayed").length, color: T.red },
+              ].map(b => (
+                <div key={b.label} style={{ textAlign: "center" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: "50%", border: `3px solid ${b.color}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 4px" }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: b.color, fontFamily: "'IBM Plex Mono', monospace" }}>{b.count}</span>
+                  </div>
+                  <div style={{ fontSize: 9, color: T.sub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>{b.label}</div>
                 </div>
-                <div style={{ fontSize: 10, color: T.sub, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1 }}>{b.label}</div>
-              </div>
-            ))}
-          </div>
-        </Card>
+              ))}
+            </div>
+          </Card>
+        </div>
       </div>
 
-      {/* Row 4: Full supplier table */}
+      {/* Bottom: Full supplier table */}
       <div style={{ marginTop: 14 }}>
         <SupplierTable suppliers={suppliers} />
       </div>
@@ -831,10 +827,10 @@ function ThroughputChart({ throughput }) {
 }
 
 /* ─── OTD trend ──────────────────────────────────────────────────────── */
-function OtdTrendChart({ otdHistory }) {
+function OtdTrendChart({ otdHistory, height = 150 }) {
   return (
     <Card title="Network OTD — Rolling 14 Days" subtitle="All Tier-1 suppliers · avg on-time delivery %">
-      <ResponsiveContainer width="100%" height={150}>
+      <ResponsiveContainer width="100%" height={height}>
         <LineChart data={otdHistory} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
           <CartesianGrid stroke={T.border} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="label" tick={{ fill: T.muted, fontSize: 9 }} tickLine={false} />
