@@ -163,7 +163,7 @@ function OtdOverviewScreen({ viewBy, onViewBy }) {
             <div style={{ fontSize: 15, fontWeight: 800, color: t.text, marginBottom: 12 }}>Expected Order Delay</div>
             {OTD_OV_DELAY.map(d => (
               <div key={d.label} style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-                <div style={{ width: 140, padding: "8px 12px", background: t.border, borderRadius: 4, fontSize: 13, color: t.text, textAlign: "center" }}>{d.label}</div>
+                <div style={{ flex: 1, padding: "8px 12px", background: t.border, borderRadius: 4, fontSize: 13, color: t.text, textAlign: "center" }}>{d.label}</div>
                 <div style={{ flex: 1, padding: "8px 12px", background: t.border, borderRadius: 4, fontSize: 16, fontWeight: 700, color: t.text, textAlign: "center", marginLeft: 8 }}>{d.value}</div>
               </div>
             ))}
