@@ -184,13 +184,14 @@ const ROWS_5   = Array.from({ length: 5 },   (_, i) => fakeOrder(i));
 const ROWS_200 = Array.from({ length: 200 }, (_, i) => fakeOrder(i));
 
 /* ─── Export helpers ────────────────────────────────────────────────── */
-const btnStyle = (busy) => ({
-  padding: "6px 12px", borderRadius: 6, cursor: busy ? "wait" : "pointer",
+const btnStyle = (busy, small) => ({
+  padding: small ? "3px 7px" : "6px 12px", borderRadius: small ? 4 : 6,
+  cursor: busy ? "wait" : "pointer",
   border: `1px solid ${T.border}`,
   background: T.surface2, color: T.sub,
-  fontWeight: 600, fontSize: 11,
+  fontWeight: 600, fontSize: small ? 9 : 11,
   fontFamily: "'IBM Plex Mono', monospace",
-  display: "flex", alignItems: "center", gap: 5,
+  display: "flex", alignItems: "center", gap: small ? 3 : 5,
   opacity: busy ? 0.5 : 1, transition: "opacity 0.2s",
 });
 
@@ -336,6 +337,111 @@ function ExportButtons({ targetRef, filename }) {
       <button onClick={exportSvg} disabled={!!busy} style={btnStyle(busy === "svg")}>
         <span style={{ fontSize: 13 }}>⬇</span>
         {busy === "svg" ? "Exporting…" : "SVG"}
+      </button>
+    </div>
+  );
+}
+
+/* ─── Individual diagram export (PNG + SVG) ───────────────────────── */
+function DiagramExportButtons({ svgFile, label }) {
+  const [busy, setBusy] = useState(null);
+
+  const exportSvg = useCallback(async () => {
+    if (busy) return;
+    setBusy("svg");
+    try {
+      const resp = await fetch(`/${svgFile}`);
+      const text = await resp.text();
+      const blob = new Blob([text], { type: "image/svg+xml" });
+      const link = document.createElement("a");
+      link.download = svgFile;
+      link.href = URL.createObjectURL(blob);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      console.error("SVG export failed:", err);
+    } finally {
+      setBusy(null);
+    }
+  }, [svgFile, busy]);
+
+  const exportPng = useCallback(async () => {
+    if (busy) return;
+    setBusy("png");
+    try {
+      const resp = await fetch(`/${svgFile}`);
+      const text = await resp.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, "image/svg+xml");
+      const svgEl = doc.querySelector("svg");
+      if (!svgEl) return;
+
+      // Read intrinsic dimensions from viewBox or width/height attributes
+      const vb = svgEl.getAttribute("viewBox");
+      let w, h;
+      if (vb) {
+        const parts = vb.split(/[\s,]+/).map(Number);
+        w = parts[2]; h = parts[3];
+      } else {
+        w = parseFloat(svgEl.getAttribute("width")) || 800;
+        h = parseFloat(svgEl.getAttribute("height")) || 600;
+      }
+
+      const scale = 2;
+      svgEl.setAttribute("width", String(w));
+      svgEl.setAttribute("height", String(h));
+
+      const svgData = new XMLSerializer().serializeToString(svgEl);
+      const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(svgBlob);
+
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = w * scale;
+        canvas.height = h * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#0E1117";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+
+        canvas.toBlob(blob => {
+          if (!blob) return;
+          const dlUrl = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.download = svgFile.replace(/\.svg$/, ".png");
+          link.href = dlUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(dlUrl);
+          setBusy(null);
+        }, "image/png");
+      };
+      img.onerror = () => {
+        console.error("PNG render failed");
+        URL.revokeObjectURL(url);
+        setBusy(null);
+      };
+      img.src = url;
+    } catch (err) {
+      console.error("PNG export failed:", err);
+      setBusy(null);
+    }
+  }, [svgFile, busy]);
+
+  return (
+    <div style={{ display: "flex", gap: 4 }}>
+      <button onClick={exportPng} disabled={!!busy} style={btnStyle(busy === "png", true)} title={`Export ${label} as PNG`}>
+        <span style={{ fontSize: 10 }}>⬇</span>
+        {busy === "png" ? "…" : "PNG"}
+      </button>
+      <button onClick={exportSvg} disabled={!!busy} style={btnStyle(busy === "svg", true)} title={`Export ${label} as SVG`}>
+        <span style={{ fontSize: 10 }}>⬇</span>
+        {busy === "svg" ? "…" : "SVG"}
       </button>
     </div>
   );
@@ -1064,7 +1170,7 @@ export default function DataScale() {
     { id: "medium",  label: "② 200 rows" },
     { id: "table",   label: "③ Single ERD table" },
     { id: "mega",    label: "④ Full ERD (1 image)" },
-    { id: "full",    label: "⑤ All 10 domains" },
+    { id: "full",    label: "⑤ All 11 domains" },
   ];
 
   return (
@@ -1224,6 +1330,7 @@ export default function DataScale() {
                 Fit
               </button>
               <span style={{ fontSize: 11, color: T.muted, marginLeft: 8 }}>Ctrl+scroll to zoom</span>
+              <DiagramExportButtons svgFile="erd_overview_mermaid.svg" label="Full Schema" />
             </div>
           </div>
           <div
@@ -1258,7 +1365,7 @@ export default function DataScale() {
         <div>
           <div style={{ marginBottom: 16 }}>
             <span style={{ fontSize: 16, fontWeight: 700, color: T.text, fontFamily: "'IBM Plex Mono', monospace" }}>
-              Full Schema — 100 tables · 226 relationships · 10 domains
+              Full Schema — 137 tables · 226 relationships · 11 domains
             </span>
             <span style={{ fontSize: 11, color: T.muted, marginLeft: 12 }}>Nestlé Supply Chain Operations</span>
           </div>
@@ -1278,6 +1385,7 @@ export default function DataScale() {
               { file: "erd_logistics.svg",       label: "Logistics & Cold Chain",     tables: 13 },
               { file: "erd_alerts.svg",          label: "Alerts & Monitoring",        tables: 4  },
               { file: "erd_kpis_demand.svg",     label: "KPIs, Analytics & Demand",   tables: 9  },
+              { file: "erd_customer_order_payment.svg", label: "Customer, Order & Payment", tables: 37 },
             ].map(d => (
               <div key={d.file} style={{
                 background: T.surface, borderRadius: 8, border: `1px solid ${T.border}`,
@@ -1290,7 +1398,10 @@ export default function DataScale() {
                   <span style={{ fontSize: 11, fontWeight: 700, color: T.text, fontFamily: "'IBM Plex Mono', monospace" }}>
                     {d.label}
                   </span>
-                  <span style={{ fontSize: 10, color: T.muted }}>{d.tables} tables</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 10, color: T.muted }}>{d.tables} tables</span>
+                    <DiagramExportButtons svgFile={d.file} label={d.label} />
+                  </div>
                 </div>
                 <div style={{ padding: 8, overflow: "hidden" }}>
                   <img
