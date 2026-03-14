@@ -31,6 +31,13 @@ const ThemeCtx = createContext(DARK);
 const useT = () => useContext(ThemeCtx);
 const F = "'IBM Plex Sans', sans-serif";
 
+/* ─── Number obfuscation helper ──────────────────────────────────── */
+const obf = (v) => {
+  if (v == null) return v;
+  return String(v).replace(/\d/g, "\u2022");
+};
+const Obf = ({ children }) => <span style={{ userSelect: "none" }}>{obf(children)}</span>;
+
 /* ─── Shared navigation data ──────────────────────────────────────── */
 const MAIN_TABS = ["Executive Summary","Order to Delivery","Delivery to Billing","Billing to POD","Admin","Historical Alert"];
 const SUB_TABS = ["Overview","Order to Delivery","Delivery to Billing","Billing to POD"];
@@ -78,10 +85,10 @@ function ExecSummaryOverview({ viewBy, onViewBy }) {
             <BarChart data={EXEC_COUNT_DATA} margin={{ top: 20, right: 10, bottom: 5, left: 0 }}>
               <CartesianGrid stroke={t.border} strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="plant" tick={{ fill: t.sub, fontSize: 9 }} />
-              <YAxis tick={{ fill: t.sub, fontSize: 10 }} tickLine={false} axisLine={false} label={{ value: "Orders", angle: -90, position: "insideLeft", style: { fill: t.sub, fontSize: 11 } }} />
-              <Tooltip contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }} />
-              <Bar dataKey="totalOrders" fill={t.barBlue} radius={[2,2,0,0]} barSize={50} label={{ position: "top", fill: t.text, fontSize: 11, fontWeight: 700 }} />
-              <Bar dataKey="riskyOrders" fill={t.pieCoral} radius={[2,2,0,0]} barSize={50} label={{ position: "top", fill: t.red, fontSize: 11 }} />
+              <YAxis tick={{ fill: t.sub, fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => obf(v)} label={{ value: "Orders", angle: -90, position: "insideLeft", style: { fill: t.sub, fontSize: 11 } }} />
+              <Tooltip contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }} formatter={v => obf(v)} />
+              <Bar dataKey="totalOrders" fill={t.barBlue} radius={[2,2,0,0]} barSize={50} label={{ position: "top", fill: t.text, fontSize: 11, fontWeight: 700, formatter: v => obf(v) }} />
+              <Bar dataKey="riskyOrders" fill={t.pieCoral} radius={[2,2,0,0]} barSize={50} label={{ position: "top", fill: t.red, fontSize: 11, formatter: v => obf(v) }} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -92,9 +99,9 @@ function ExecSummaryOverview({ viewBy, onViewBy }) {
             <BarChart data={EXEC_RISK_BUCKETS} margin={{ top: 20, right: 10, bottom: 5, left: 0 }}>
               <CartesianGrid stroke={t.border} strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="bucket" tick={{ fill: t.sub, fontSize: 10 }} label={{ value: "Risk Buckets", position: "insideBottom", offset: -2, style: { fill: t.sub, fontSize: 11 } }} />
-              <YAxis tick={{ fill: t.sub, fontSize: 10 }} tickLine={false} axisLine={false} label={{ value: "Orders", angle: -90, position: "insideLeft", style: { fill: t.sub, fontSize: 11 } }} />
-              <Tooltip contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }} />
-              <Bar dataKey="orders" radius={[2,2,0,0]} barSize={60} label={{ position: "top", fill: t.text, fontSize: 11, fontWeight: 700 }}>
+              <YAxis tick={{ fill: t.sub, fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => obf(v)} label={{ value: "Orders", angle: -90, position: "insideLeft", style: { fill: t.sub, fontSize: 11 } }} />
+              <Tooltip contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }} formatter={v => obf(v)} />
+              <Bar dataKey="orders" radius={[2,2,0,0]} barSize={60} label={{ position: "top", fill: t.text, fontSize: 11, fontWeight: 700, formatter: v => obf(v) }}>
                 {EXEC_RISK_BUCKETS.map((e, i) => <Cell key={i} fill={t[e.color]} />)}
               </Bar>
             </BarChart>
@@ -108,9 +115,9 @@ function ExecSummaryOverview({ viewBy, onViewBy }) {
           <BarChart data={EXEC_TIMELINE_DATA} margin={{ top: 20, right: 10, bottom: 5, left: 0 }}>
             <CartesianGrid stroke={t.border} strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="period" tick={{ fill: t.sub, fontSize: 10 }} />
-            <YAxis tick={{ fill: t.sub, fontSize: 10 }} tickLine={false} axisLine={false} label={{ value: "Orders", angle: -90, position: "insideLeft", style: { fill: t.sub, fontSize: 11 } }} />
-            <Tooltip contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }} />
-            <Bar dataKey="orders" fill={t.barBlue} radius={[2,2,0,0]} barSize={80} label={{ position: "top", fill: t.text, fontSize: 11, fontWeight: 700 }} />
+            <YAxis tick={{ fill: t.sub, fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => obf(v)} label={{ value: "Orders", angle: -90, position: "insideLeft", style: { fill: t.sub, fontSize: 11 } }} />
+            <Tooltip contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }} formatter={v => obf(v)} />
+            <Bar dataKey="orders" fill={t.barBlue} radius={[2,2,0,0]} barSize={80} label={{ position: "top", fill: t.text, fontSize: 11, fontWeight: 700, formatter: v => obf(v) }} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -142,7 +149,7 @@ function OtdOverviewScreen({ viewBy, onViewBy }) {
     const x = cx + r * Math.cos(-midAngle * RADIAN);
     const y = cy + r * Math.sin(-midAngle * RADIAN);
     return (<text x={x} y={y} textAnchor={x > cx ? "start" : "end"} dominantBaseline="central"
-      style={{ fontSize: 12, fill: t.text, fontFamily: F }}>{name} {value}%</text>);
+      style={{ fontSize: 12, fill: t.text, fontFamily: F }}>{name} {obf(value)}%</text>);
   };
   return (
     <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
@@ -155,7 +162,7 @@ function OtdOverviewScreen({ viewBy, onViewBy }) {
             <div style={{ fontSize: 15, fontWeight: 800, color: t.text, marginBottom: 10 }}>Risky Orders</div>
             <div style={{ display: "flex", gap: 16 }}>
               {[{ l: "Count of orders", v: "1,784" },{ l: "Net Weight", v: "3M" },{ l: "Net Value", v: "105M" },{ l: "Volume", v: "9,897" },{ l: "PUM", v: "513K" }].map(m => (
-                <div key={m.l}><div style={{ fontSize: 10, color: t.sub, marginBottom: 2 }}>{m.l}</div><div style={{ fontSize: 18, fontWeight: 800, color: t.text }}>{m.v}</div></div>
+                <div key={m.l}><div style={{ fontSize: 10, color: t.sub, marginBottom: 2 }}>{m.l}</div><div style={{ fontSize: 18, fontWeight: 800, color: t.text }}><Obf>{m.v}</Obf></div></div>
               ))}
             </div>
           </div>
@@ -164,7 +171,7 @@ function OtdOverviewScreen({ viewBy, onViewBy }) {
             {OTD_OV_DELAY.map(d => (
               <div key={d.label} style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
                 <div style={{ flex: 1, padding: "8px 12px", background: t.border, borderRadius: 4, fontSize: 13, color: t.text, textAlign: "center" }}>{d.label}</div>
-                <div style={{ flex: 1, padding: "8px 12px", background: t.border, borderRadius: 4, fontSize: 16, fontWeight: 700, color: t.text, textAlign: "center", marginLeft: 8 }}>{d.value}</div>
+                <div style={{ flex: 1, padding: "8px 12px", background: t.border, borderRadius: 4, fontSize: 16, fontWeight: 700, color: t.text, textAlign: "center", marginLeft: 8 }}><Obf>{d.value}</Obf></div>
               </div>
             ))}
           </div>
@@ -180,10 +187,10 @@ function OtdOverviewScreen({ viewBy, onViewBy }) {
                 label={renderLabel} labelLine={{ stroke: t.muted, strokeWidth: 1 }}>
                 {pieData.map((e, i) => <Cell key={i} fill={e.color} />)}
               </Pie>
-              <Tooltip contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }} formatter={v => [v + "%", "Share"]} />
+              <Tooltip contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }} formatter={v => [obf(v) + "%", "Share"]} />
               {/* Center label */}
               <text x="50%" y="44%" textAnchor="middle" style={{ fontSize: 13, fill: t.sub, fontFamily: F }}>Total Count</text>
-              <text x="50%" y="53%" textAnchor="middle" style={{ fontSize: 22, fontWeight: 800, fill: t.text, fontFamily: F }}>5,359</text>
+              <text x="50%" y="53%" textAnchor="middle" style={{ fontSize: 22, fontWeight: 800, fill: t.text, fontFamily: F }}>{obf("5,359")}</text>
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -383,7 +390,7 @@ function KpiRow({ cards }) {
         <div key={c.title} style={{ border: `2px solid ${t.borderDark}`, borderRadius: 6, padding: "14px 18px", background: t.surface, fontFamily: F }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: t.text, marginBottom: 10 }}>{c.title}</div>
           <div style={{ display: "flex", gap: 16 }}>
-            {c.metrics.map(m => (<div key={m.l}><div style={{ fontSize: 10, color: t.sub, marginBottom: 2 }}>{m.l}</div><div style={{ fontSize: 18, fontWeight: 800, color: t.text }}>{m.v}</div></div>))}
+            {c.metrics.map(m => (<div key={m.l}><div style={{ fontSize: 10, color: t.sub, marginBottom: 2 }}>{m.l}</div><div style={{ fontSize: 18, fontWeight: 800, color: t.text }}><Obf>{m.v}</Obf></div></div>))}
           </div>
         </div>
       ))}
@@ -416,19 +423,19 @@ function ComboChartCard({ title, data, barLabel1, barLabel2, lineLabel, yLabel, 
           <CartesianGrid stroke={t.border} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="plant" tick={{ fill: t.sub, fontSize: 9 }} angle={-15} textAnchor="end" interval={0} height={60} />
           <YAxis yAxisId="left" tick={{ fill: t.sub, fontSize: 10 }} tickLine={false} axisLine={false}
-            tickFormatter={fmtY || undefined}
+            tickFormatter={v => obf(fmtY ? fmtY(v) : v)}
             label={{ value: yLabel || "Orders", angle: -90, position: "insideLeft", style: { fill: t.sub, fontSize: 11 } }} />
-          <YAxis yAxisId="right" orientation="right" tick={{ fill: t.sub, fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => v + "%"} />
+          <YAxis yAxisId="right" orientation="right" tick={{ fill: t.sub, fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={v => obf(v) + "%"} />
           <Tooltip contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }} labelStyle={{ color: t.text }} itemStyle={{ color: t.sub }}
             formatter={(v, name) => {
-              if (name === "pctRisky") return [v.toFixed(2) + "%", "% Risky"];
+              if (name === "pctRisky") return [obf(v.toFixed(2)) + "%", "% Risky"];
               const fmt = fmtY ? fmtY(v) : v.toLocaleString();
-              return [fmt, name === "total" ? barLabel1 : barLabel2];
+              return [obf(fmt), name === "total" ? barLabel1 : barLabel2];
             }} />
-          <Bar yAxisId="left" dataKey="total" fill={t.barBlue} radius={[2,2,0,0]} barSize={40} label={{ position: "top", fill: t.text, fontSize: 11, fontWeight: 700, formatter: fmtY || undefined }} />
-          <Bar yAxisId="left" dataKey="atRisk" fill={t.barRed} radius={[2,2,0,0]} barSize={40} label={{ position: "top", fill: t.red, fontSize: 10, formatter: fmtY || undefined }} />
+          <Bar yAxisId="left" dataKey="total" fill={t.barBlue} radius={[2,2,0,0]} barSize={40} label={{ position: "top", fill: t.text, fontSize: 11, fontWeight: 700, formatter: v => obf(fmtY ? fmtY(v) : v) }} />
+          <Bar yAxisId="left" dataKey="atRisk" fill={t.barRed} radius={[2,2,0,0]} barSize={40} label={{ position: "top", fill: t.red, fontSize: 10, formatter: v => obf(fmtY ? fmtY(v) : v) }} />
           <Line yAxisId="right" dataKey="pctRisky" stroke={t.lineOrange} strokeWidth={2} dot={{ r: 4, fill: t.lineOrange }}
-            label={{ position: "top", fill: t.lineOrange, fontSize: 10, formatter: v => v.toFixed(2) + "%" }} />
+            label={{ position: "top", fill: t.lineOrange, fontSize: 10, formatter: v => obf(v.toFixed(2)) + "%" }} />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
@@ -446,7 +453,7 @@ function DonutPieCard({ title, pieKeys, centerLabel, centerValue }) {
     const y = cy + r * Math.sin(-midAngle * RADIAN);
     if (value < 2) return null;
     return (<text x={x} y={y} textAnchor={x > cx ? "start" : "end"} dominantBaseline="central"
-      style={{ fontSize: 11, fill: t.text, fontFamily: F }}>{name} {value}%</text>);
+      style={{ fontSize: 11, fill: t.text, fontFamily: F }}>{name} {obf(value)}%</text>);
   };
   return (
     <div style={{ border: `1px solid ${t.borderDark}`, borderRadius: 6, background: t.surface, padding: 16, fontFamily: F }}>
@@ -460,7 +467,7 @@ function DonutPieCard({ title, pieKeys, centerLabel, centerValue }) {
             label={renderLabel} labelLine={{ stroke: t.muted, strokeWidth: 1 }}>
             {pieData.map((e, i) => <Cell key={i} fill={e.color} />)}
           </Pie>
-          <Tooltip contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }} formatter={v => [v + "%", "Share"]} />
+          <Tooltip contentStyle={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 6, fontSize: 12, color: t.text }} formatter={v => [obf(v) + "%", "Share"]} />
         </PieChart>
       </ResponsiveContainer>
     </div>
@@ -480,8 +487,8 @@ function BottomTable() {
         <tbody>{TABLE_OTD.map((r, i) => (
           <tr key={r.exception}>
             <td style={{ ...td(i), fontWeight: 600 }}>{r.exception}</td>
-            <td style={td(i)}>{r.block}</td><td style={td(i)}>{r.openSales}</td>
-            <td style={td(i)}>{r.calendar}</td><td style={td(i)}>{r.routing}</td>
+            <td style={td(i)}><Obf>{r.block}</Obf></td><td style={td(i)}><Obf>{r.openSales}</Obf></td>
+            <td style={td(i)}><Obf>{r.calendar}</Obf></td><td style={td(i)}><Obf>{r.routing}</Obf></td>
           </tr>
         ))}</tbody>
       </table>
